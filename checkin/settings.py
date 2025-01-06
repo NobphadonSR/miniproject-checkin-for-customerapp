@@ -74,9 +74,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'sslserver',
     'attendance',
 ]
+if DEBUG:
+    INSTALLED_APPS += ['sslserver']
 
 AUTH_USER_MODEL = 'attendance.User'
 
