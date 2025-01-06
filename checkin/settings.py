@@ -101,7 +101,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'attendance',
+    'attendance.apps.AttendanceConfig',
 ]
 
 AUTH_USER_MODEL = 'attendance.User'
