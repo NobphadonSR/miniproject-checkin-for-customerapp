@@ -61,11 +61,7 @@ if DEBUG:
     SECURE_HSTS_PRELOAD = False
 '''
 
-ALLOWED_HOSTS = ['48ae-49-0-80-224.ngrok-free.app', '127.0.0.1', 'localhost', '192.168.2.122']
-
-CSRF_TRUSTED_ORIGINS = ['https://48ae-49-0-80-224.ngrok-free.app']
-#ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
-
+ALLOWED_HOSTS = []
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
