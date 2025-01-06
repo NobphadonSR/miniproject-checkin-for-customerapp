@@ -1,0 +1,125 @@
+{% extends 'attendance/base.html' %}
+
+{% block extra_css %}
+<style>
+    select {
+        @apply w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent dark:bg-gray-700 dark:text-white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-2xl mx-auto">
+        <!-- Welcome Message -->
+        <div class="text-center mb-8">
+            <div class="inline-block p-2 bg-indigo-100 dark:bg-indigo-900/50 rounded-2xl mb-4">
+                <i class="ph-user-plus-bold text-4xl text-indigo-600 dark:text-indigo-400"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-800 dark:text-white mb-2">สร้างบัญชีใหม่ ✨</h1>
+            <p class="text-gray-600 dark:text-gray-400">กรอกข้อมูลด้านล่างเพื่อเริ่มต้นใช้งาน</p>
+        </div>
+
+        <!-- Registration Form -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 backdrop-blur-sm">
+            {% if form.errors %}
+            <div class="bg-red-100 dark:bg-red-900/50 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-3 rounded-xl mb-6">
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                        <div class="flex items-center space-x-2">
+                            <i class="ph-warning-circle-bold"></i>
+                            <p>{{ error }}</p>
+                        </div>
+                    {% endfor %}
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+                
+                <div class="grid md:grid-cols-2 gap-6">
+                    <!-- ชื่อผู้ใช้ -->
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 mb-2 font-medium">ชื่อผู้ใช้ *</label>
+                        <div class="relative"> 
+                            {{ form.username }}
+                        </div>
+                    </div>
+
+                    <!-- อีเมล -->
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 mb-2 font-medium">อีเมล *</label>
+                        <div class="relative">
+                            {{ form.email }}
+                        </div>
+                    </div>
+
+                    <!-- แผนก (เพิ่มส่วนนี้) -->
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 mb-2 font-medium">แผนก *</label>
+                        <div class="relative">
+                            {{ form.department }}
+                        </div>
+                    </div>
+
+                    <!-- ชื่อจริง -->
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 mb-2 font-medium">ชื่อจริง *</label>
+                        {{ form.first_name }}
+                    </div>
+
+                    <!-- นามสกุล -->
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 mb-2 font-medium">นามสกุล *</label>
+                        {{ form.last_name }}
+                    </div>
+
+                    <!-- เบอร์โทรศัพท์ -->
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 mb-2 font-medium">เบอร์โทรศัพท์ *</label>
+                        <div class="relative">
+                            {{ form.phone }}
+                        </div>
+                    </div>
+
+                    <!-- รหัสผ่าน -->
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 mb-2 font-medium">รหัสผ่าน *</label>
+                        <div class="relative">
+                            {{ form.password1 }}
+                        </div>
+                    </div>
+
+                    <!-- ยืนยันรหัสผ่าน -->
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 mb-2 font-medium">ยืนยันรหัสผ่าน *</label>
+                        <div class="relative">
+                            {{ form.password2 }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ที่อยู่ -->
+                <div>
+                    <label class="block text-gray-700 dark:text-gray-300 mb-2 font-medium">ที่อยู่ *</label>
+                    {{ form.address }}
+                </div>
+
+                <button type="submit" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 rounded-xl hover:from-indigo-600 hover:to-purple-700 transition duration-300 flex items-center justify-center space-x-2 transform hover:scale-[1.02]">
+                    <span>ลงทะเบียน</span>
+                </button>
+            </form>
+
+            <div class="mt-6 text-center">
+                <p class="text-gray-600 dark:text-gray-400">
+                    มีบัญชีอยู่แล้ว? 
+                    <a href="{% url 'attendance:login' %}" class="text-indigo-600 dark:text-indigo-400 hover:underline">
+                        เข้าสู่ระบบเลย
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

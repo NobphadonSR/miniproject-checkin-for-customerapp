@@ -1,0 +1,76 @@
+{% extends 'attendance/base.html' %}
+
+{% block content %}
+<div class="min-h-[80vh] flex items-center py-4 md:py-8">
+    <div class="container mx-auto px-4">
+        <div class="max-w-md mx-auto">
+            <!-- Welcome Message -->
+            <div class="text-center mb-6 md:mb-8">
+                <div class="inline-block p-2 bg-indigo-100 dark:bg-indigo-900/50 rounded-2xl mb-3 md:mb-4">
+                    <i class="ph-fingerprint-bold text-3xl md:text-4xl text-indigo-600 dark:text-indigo-400"></i>
+                </div>
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white mb-2">ยินดีต้อนรับกลับ! 👋</h1>
+                <p class="text-sm md:text-base text-gray-600 dark:text-gray-400">เข้าสู่ระบบเพื่อจัดการเวลาทำงานของคุณ</p>
+            </div>
+
+            <!-- Login Form -->
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-5 md:p-8 backdrop-blur-sm">
+                {% if form.errors %}
+                <div class="bg-red-100 dark:bg-red-900/50 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-3 py-2 md:px-4 md:py-3 rounded-xl mb-4 md:mb-6 text-sm md:text-base flex items-center space-x-2">
+                    <i class="ph-warning-circle-bold"></i>
+                    <p>ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง</p>
+                </div>
+                {% endif %}
+
+                <form method="post" class="space-y-4 md:space-y-6">
+                    {% csrf_token %}
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2 text-sm md:text-base font-medium">ชื่อผู้ใช้</label>
+                        <div class="relative">
+                            <input type="text" name="username" 
+                                   class="w-full pl-10 pr-4 py-2.5 md:py-3 text-sm md:text-base rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition duration-200" 
+                                   placeholder="กรอกชื่อผู้ใช้">
+                            <i class="ph-user absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2 text-sm md:text-base font-medium">รหัสผ่าน</label>
+                        <div class="relative">
+                            <input type="password" name="password" 
+                                   class="w-full pl-10 pr-4 py-2.5 md:py-3 text-sm md:text-base rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition duration-200" 
+                                   placeholder="กรอกรหัสผ่าน">
+                            <i class="ph-lock absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-2.5 md:py-3 rounded-xl hover:from-indigo-600 hover:to-purple-700 transition duration-300 flex items-center justify-center space-x-2 text-sm md:text-base transform hover:scale-[1.02]">
+                        <i class="ph-sign-in-bold"></i>
+                        <span>เข้าสู่ระบบ</span>
+                    </button>
+                </form>
+
+                <div class="mt-4 md:mt-6 text-center">
+                    <p class="text-sm md:text-base text-gray-600 dark:text-gray-400">
+                        ยังไม่มีบัญชี? 
+                        <a href="{% url 'attendance:register' %}" class="text-indigo-600 dark:text-indigo-400 hover:underline">
+                            ลงทะเบียนเลย
+                        </a>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Quick Tips -->
+            <div class="mt-6 grid grid-cols-2 gap-4">
+                <div class="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm p-4 rounded-xl text-center">
+                    <i class="ph-shield-check-bold text-2xl text-indigo-600 dark:text-indigo-400 mb-2"></i>
+                    <p class="text-xs md:text-sm text-gray-600 dark:text-gray-400">ระบบความปลอดภัยมาตรฐานสูง</p>
+                </div>
+                <div class="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm p-4 rounded-xl text-center">
+                    <i class="ph ph-clock-bold text-2xl text-indigo-600 dark:text-indigo-400 mb-2"></i>
+                    <p class="text-xs md:text-sm text-gray-600 dark:text-gray-400">บันทึกเวลาแบบเรียลไทม์</p>
+                </div>
+            </div>
+        </div>                                                              
+    </div>
+</div>
+{% endblock %}

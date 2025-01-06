@@ -1,0 +1,694 @@
+{% extends 'attendance/base.html' %}
+
+{% block extra_css %}
+<!-- เพิ่ม Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    #map {
+        width: 100%;
+        height: 100%;
+        min-height: 400px;
+        z-index: 1;
+    }
+    .leaflet-top {
+        z-index: 1000 !important;
+    }
+    .leaflet-control-geocoder {
+        clear: none !important;
+    }
+    /* เพิ่ม style สำหรับ modal */
+    .modal-map-container {
+        position: relative;
+        height: 400px;
+        width: 100%;
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-4 md:py-8">
+    <!-- Stats Overview -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
+        <div class="bg-gradient-to-br from-blue-500 to-indigo-600 p-4 md:p-6 rounded-2xl shadow-lg card-hover">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                <div>
+                    <p class="text-white/80 text-xs md:text-sm">พนักงานทั้งหมด</p>
+                    <h3 class="text-lg md:text-2xl font-bold text-white">{{ total_employees }} คน</h3>
+                </div>
+                <i class="ph-users-bold text-2xl md:text-3xl text-white/80 hidden md:block"></i>
+            </div>
+        </div>
+        <div class="bg-gradient-to-br from-emerald-500 to-teal-600 p-4 md:p-6 rounded-2xl shadow-lg card-hover">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                <div>
+                    <p class="text-white/80 text-xs md:text-sm">มาทำงานวันนี้</p>
+                    <h3 class="text-lg md:text-2xl font-bold text-white">{{ present_today }} คน</h3>
+                </div>
+                <i class="ph-check-circle-bold text-2xl md:text-3xl text-white/80 hidden md:block"></i>
+            </div>
+        </div>
+        <div class="bg-gradient-to-br from-amber-500 to-orange-600 p-4 md:p-6 rounded-2xl shadow-lg card-hover">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                <div>
+                    <p class="text-white/80 text-xs md:text-sm">ลาวันนี้</p>
+                    <h3 class="text-lg md:text-2xl font-bold text-white">{{ leave_today }} คน</h3>
+                </div>
+                <i class="ph-calendar-blank-bold text-2xl md:text-3xl text-white/80 hidden md:block"></i>
+            </div>
+        </div>
+        <div class="bg-gradient-to-br from-red-500 to-rose-600 p-4 md:p-6 rounded-2xl shadow-lg card-hover">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                <div>
+                    <p class="text-white/80 text-xs md:text-sm">ขาดงาน</p>
+                    <h3 class="text-lg md:text-2xl font-bold text-white">{{ absent_today }} คน</h3>
+                </div>
+                <i class="ph-x-circle-bold text-2xl md:text-3xl text-white/80 hidden md:block"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="space-y-4">
+        <div class="space-y-2">
+            <div class="flex justify-between text-sm">
+                <span class="text-gray-600 dark:text-gray-400">มาตรงเวลา</span>
+                <span class="font-medium text-gray-900 dark:text-white">{{ on_time_rate }}%</span>
+            </div>
+            <div class="h-2 bg-gray-100 dark:bg-gray-700 rounded-full">
+                <div class="h-2 bg-green-500 rounded-full" style="width: {{ on_time_rate }}%"></div>
+            </div>
+        </div>
+        <div class="space-y-2">
+            <div class="flex justify-between text-sm">
+                <span class="text-gray-600 dark:text-gray-400">มาสาย</span>
+                <span class="font-medium text-gray-900 dark:text-white">{{ late_rate }}%</span>
+            </div>
+            <div class="h-2 bg-gray-100 dark:bg-gray-700 rounded-full">
+                <div class="h-2 bg-yellow-500 rounded-full" style="width: {{ late_rate }}%"></div>
+            </div>
+        </div>
+        <div class="space-y-2">
+            <div class="flex justify-between text-sm">
+                <span class="text-gray-600 dark:text-gray-400">ขาดงาน</span>
+                <span class="font-medium text-gray-900 dark:text-white">{{ absent_rate }}%</span>
+            </div>
+            <div class="h-2 bg-gray-100 dark:bg-gray-700 rounded-full">
+                <div class="h-2 bg-red-500 rounded-full" style="width: {{ absent_rate }}%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="grid md:grid-cols-3 gap-6">
+        <!-- Attendance Table -->
+        <div class="md:col-span-2 bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 md:p-6 backdrop-blur-sm">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 space-y-4 md:space-y-0">
+                <h2 class="text-xl font-bold flex items-center space-x-2 text-gray-800 dark:text-white">
+                    <i class="ph-users-three-bold text-2xl text-indigo-600 dark:text-indigo-400"></i>
+                    <span>รายงานการลงเวลา</span>
+                    <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        วันที่: {{ selected_date|date:"d/m/Y" }}
+                    </div>
+                </h2>
+                <!-- ส่วนของ date picker -->
+                <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4 w-full md:w-auto">
+                    <form id="dateFilterForm" class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4">
+                        <input type="date" 
+                            name="date"
+                            value="{{ selected_date|date:'Y-m-d' }}"
+                            class="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-sm">
+                            <!--<button type="submit"
+                                    class="bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 px-4 py-2 rounded-xl hover:bg-indigo-200 dark:hover:bg-indigo-900 transition duration-300 text-sm flex items-center justify-center space-x-2">
+                                <i class="ph-magnifying-glass-bold"></i>
+                                <span>ค้นหา</span>-->
+                        </button>
+                    </form>
+                    <div class="relative inline-block">
+                        <button onclick="toggleExportMenu()" 
+                                class="bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 px-4 py-2 rounded-xl hover:bg-indigo-200 dark:hover:bg-indigo-900 transition duration-300 text-sm flex items-center justify-center space-x-2">
+                            <i class="ph-export-bold"></i>
+                            <span>Export</span>
+                        </button>
+                        <!-- เพิ่มเมนู dropdown -->
+                        <div id="exportMenu" class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-lg z-50">
+                            <div class="p-2 space-y-1">
+                                <button onclick="exportToExcel('day')" 
+                                        class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-lg">
+                                    Export วันที่เลือก
+                                </button>
+                                <button onclick="exportToExcel('week')" 
+                                        class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-lg">
+                                    Export สัปดาห์นี้
+                                </button>
+                                <button onclick="exportToExcel('month')" 
+                                        class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-lg">
+                                    Export เดือนนี้
+                                </button>
+                                <button onclick="exportToExcel('year')" 
+                                        class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-lg">
+                                    Export ปีนี้
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile View -->
+            <div class="md:hidden space-y-4">
+                {% for attendance in attendances %}
+                <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
+                                <i class="ph-user text-indigo-600 dark:text-indigo-400"></i>
+                            </div>
+                            <div>
+                                <div class="font-medium text-gray-900 dark:text-white">
+                                    {{ attendance.employee.first_name }} {{ attendance.employee.last_name }}
+                                </div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">
+                                    {{ attendance.employee.get_department_display }}
+                                </div>
+                            </div>
+                        </div>
+                        <span class="px-2 py-1 rounded-full text-xs font-medium
+                            {% if attendance.status == 'present' %}bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400
+                            {% elif attendance.status == 'late' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-400
+                            {% elif attendance.status == 'absent' %}bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400
+                            {% else %}bg-gray-100 text-gray-800 dark:bg-gray-900/50 dark:text-gray-400{% endif %}">
+                            {{ attendance.get_status_display }}
+                        </span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-sm">
+                        <div class="flex items-center space-x-1 text-gray-600 dark:text-gray-400">
+                            <i class="ph-arrow-right text-green-500"></i>
+                            <span>{{ attendance.check_in|default:"-" }}</span>
+                        </div>
+                        <div class="flex items-center space-x-1 text-gray-600 dark:text-gray-400">
+                            <i class="ph-arrow-left text-red-500"></i>
+                            <span>{{ attendance.check_out|default:"-" }}</span>
+                        </div>
+                    </div>
+
+                    {% if attendance.latitude and attendance.longitude %}
+                    <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                        <a href="https://www.google.com/maps?q={{ attendance.latitude }},{{ attendance.longitude }}" 
+                        target="_blank"
+                        class="text-indigo-600 dark:text-indigo-400 hover:underline flex items-center space-x-1">
+                            <i class="ph-map-pin-bold"></i>
+                            <span>ดูตำแหน่งที่เช็คอิน</span>
+                        </a>
+                    </div>
+                    {% endif %}
+
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Desktop View -->
+            <div class="hidden md:block overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50 dark:bg-gray-700/50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">พนักงาน</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">แผนก</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">เวลาเข้า</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">เวลาออก</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">สถานะ</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ตำแหน่ง</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                        {% for attendance in attendances %}
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition duration-150">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
+                                        <i class="ph-user text-indigo-600 dark:text-indigo-400"></i>
+                                    </div>
+                                    <div>
+                                        <div class="font-medium text-gray-900 dark:text-white">
+                                            {{ attendance.employee.first_name }} {{ attendance.employee.last_name }}
+                                        </div>
+                                        <div class="text-sm text-gray-500 dark:text-gray-400">
+                                            {{ attendance.employee.email }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                {{ attendance.employee.get_department_display }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                {{ attendance.check_in|default:"-" }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                {{ attendance.check_out|default:"-" }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 py-1 rounded-full text-xs font-medium
+                                    {% if attendance.status == 'present' %}bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400
+                                    {% elif attendance.status == 'late' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-400
+                                    {% elif attendance.status == 'absent' %}bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400
+                                    {% else %}bg-gray-100 text-gray-800 dark:bg-gray-900/50 dark:text-gray-400{% endif %}">
+                                    {{ attendance.get_status_display }}
+                                </span>
+                            </td>
+
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                {% if attendance.latitude and attendance.longitude %}
+                                <a href="https://www.google.com/maps?q={{ attendance.latitude }},{{ attendance.longitude }}" 
+                                   target="_blank"
+                                   class="text-indigo-600 dark:text-indigo-400 hover:underline flex items-center space-x-1">
+                                    <i class="ph-map-pin-bold"></i>
+                                    <span>ดูตำแหน่ง</span>
+                                </a>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <button class="text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400">
+                                    <i class="ph-dots-three-outline-bold"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Side Panel -->
+        <div class="space-y-6">
+            <!-- Leave Requests -->
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 md:p-6 backdrop-blur-sm">
+                <h3 class="text-lg font-bold mb-4 flex items-center space-x-2 text-gray-800 dark:text-white">
+                    <i class="ph-calendar-blank-bold text-xl text-indigo-600 dark:text-indigo-400"></i>
+                    <span>คำขอลาล่าสุด</span>
+                </h3>
+                <div class="space-y-3">
+                    {% for request in leave_requests %}
+                    <div class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
+                                    <i class="ph-user text-indigo-600 dark:text-indigo-400"></i>
+                                </div>
+                                <span class="font-medium text-gray-900 dark:text-white">{{ request.employee.first_name }}</span>
+                            </div>
+                            <span class="text-xs text-gray-500 dark:text-gray-400">2 ชั่วโมงที่แล้ว</span>
+                        </div>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">ขอลาป่วย 1 วัน</p>
+                        <div class="flex space-x-2">
+                            <button class="flex-1 px-3 py-1 bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400 rounded-lg text-sm hover:bg-green-200 dark:hover:bg-green-900 transition duration-150">
+                                อนุมัติ
+                            </button>
+                            <button class="flex-1 px-3 py-1 bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400 rounded-lg text-sm hover:bg-red-200 dark:hover:bg-red-900 transition duration-150">
+                                ปฏิเสธ
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 md:p-6 backdrop-blur-sm">
+                <h3 class="text-lg font-bold mb-4 flex items-center space-x-2 text-gray-800 dark:text-white">
+                    <i class="ph-chart-line-up-bold text-xl text-indigo-600 dark:text-indigo-400"></i>
+                    <span>สถิติประจำเดือน</span>
+                </h3>
+                <div class="space-y-4">
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600 dark:text-gray-400">มาตรงเวลา</span>
+                            <span class="font-medium text-gray-900 dark:text-white">95%</span>
+                        </div>
+                        <div class="h-2 bg-gray-100 dark:bg-gray-700 rounded-full">
+                            <div class="h-2 bg-green-500 rounded-full" style="width: 95%"></div>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600 dark:text-gray-400">มาสาย</span>
+                            <span class="font-medium text-gray-900 dark:text-white">3%</span>
+                        </div>
+                        <div class="h-2 bg-gray-100 dark:bg-gray-700 rounded-full">
+                            <div class="h-2 bg-yellow-500 rounded-full" style="width: 3%"></div>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600 dark:text-gray-400">ขาดงาน</span>
+                            <span class="font-medium text-gray-900 dark:text-white">2%</span>
+                        </div>
+                        <div class="h-2 bg-gray-100 dark:bg-gray-700 rounded-full">
+                            <div class="h-2 bg-red-500 rounded-full" style="width: 2%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- เพิ่มหลังจากส่วน Quick Stats -->
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 md:p-6 backdrop-blur-sm">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold flex items-center space-x-2 text-gray-800 dark:text-white">
+                        <i class="ph-map-pin-bold text-xl text-indigo-600 dark:text-indigo-400"></i>
+                        <span>จัดการพื้นที่เช็คอิน</span>
+                    </h3>
+                    <button onclick="openLocationModal()" 
+                            class="bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 p-2 rounded-xl hover:bg-indigo-200 dark:hover:bg-indigo-900 transition duration-300">
+                        <i class="ph-plus-bold"></i>
+                    </button>
+                </div>
+                
+                <!-- รายการพื้นที่เช็คอิน -->
+                <div class="space-y-3">
+                    {% for location in locations %}
+                    <div class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h4 class="font-medium text-gray-900 dark:text-white">{{ location.name }}</h4>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">
+                                    รัศมี: {{ location.radius }} เมตร
+                                </p>
+                                <a href="https://www.google.com/maps?q={{ location.latitude }},{{ location.longitude }}" 
+                                target="_blank"
+                                class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">
+                                    ดูในแผนที่
+                                </a>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button onclick="editLocation('{{ location.id }}')" 
+                                        class="p-2 text-yellow-600 hover:bg-yellow-100 rounded-lg">
+                                    <i class="ph-pencil-bold"></i>
+                                </button>
+                                <button onclick="deleteLocation('{{ location.id }}')"
+                                        class="p-2 text-red-600 hover:bg-red-100 rounded-lg">
+                                    <i class="ph-trash-bold"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- แก้ไข Modal -->
+<div id="locationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-4xl w-full mx-4">
+        <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-white">
+            <span id="modalTitle">เพิ่มพื้นที่เช็คอิน</span>
+        </h3>
+        <form id="locationForm" method="post" action="{% url 'attendance:add_location' %}">
+            {% csrf_token %}
+            <input type="hidden" name="location_id" id="locationId">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- ฟอร์มข้อมูล -->
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            ชื่อสถานที่
+                        </label>
+                        <input type="text" name="name" id="locationName"
+                               class="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            ละติจูด
+                        </label>
+                        <input type="number" step="any" name="latitude" id="locationLat"
+                               class="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            ลองจิจูด
+                        </label>
+                        <input type="number" step="any" name="longitude" id="locationLng"
+                               class="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            รัศมี (เมตร)
+                        </label>
+                        <input type="number" name="radius" id="locationRadius"
+                               class="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                               onchange="updateCircle(this.value)">
+                    </div>
+                </div>
+                
+                <!-- แผนที่ -->
+                <div class="modal-map-container">
+                    <div id="map"></div>
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3 mt-6">
+                <button type="button" onclick="closeLocationModal()"
+                        class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                    ยกเลิก
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                    บันทึก
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<!-- เพิ่ม Leaflet JS และ plugin -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    let map;
+    let marker;
+    let circle;
+
+    function initMap() {
+        if (map) {
+            map.remove();
+        }
+
+        // ตั้งค่าเริ่มต้นที่ประเทศไทย
+        const thailand = [13.7563, 100.5018];
+        
+        map = L.map('map', {
+            center: thailand,
+            zoom: 15
+        });
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // เพิ่มช่องค้นหาสถานที่
+        const geocoder = L.Control.geocoder({
+            defaultMarkGeocode: false,
+            position: 'topleft',
+            placeholder: 'ค้นหาสถานที่...',
+            collapsed: false
+        })
+        .on('markgeocode', function(e) {
+            const latlng = e.geocode.center;
+            updateMarkerPosition(latlng);
+            map.setView(latlng, 16);
+        })
+        .addTo(map);
+
+        // ให้แผนที่ปรับขนาดหลังจากโหลดเสร็จ
+        setTimeout(() => {
+            map.invalidateSize();
+        }, 250);
+
+        // เพิ่ม event listener สำหรับการคลิกบนแผนที่
+        map.on('click', function(e) {
+            updateMarkerPosition(e.latlng);
+        });
+    }
+
+    function updateMarkerPosition(latlng) {
+        if (marker) {
+            map.removeLayer(marker);
+        }
+
+        marker = L.marker(latlng, {
+            draggable: true
+        }).addTo(map);
+
+        // อัพเดทค่าในฟอร์มเมื่อลากหมุด
+        marker.on('dragend', function() {
+            const pos = marker.getLatLng();
+            document.getElementById('locationLat').value = pos.lat;
+            document.getElementById('locationLng').value = pos.lng;
+            updateCircle(document.getElementById('locationRadius').value);
+        });
+
+        // อัพเดทค่าในฟอร์ม
+        document.getElementById('locationLat').value = latlng.lat;
+        document.getElementById('locationLng').value = latlng.lng;
+        
+        updateCircle(document.getElementById('locationRadius').value);
+    }
+
+    function updateCircle(radius) {
+        if (!marker || !radius || isNaN(radius)) return;
+        
+        if (circle) {
+            map.removeLayer(circle);
+        }
+
+        const radiusValue = Math.max(0, Number(radius)); // ป้องกันค่าติดลบ
+        
+        circle = L.circle(marker.getLatLng(), {
+            radius: radiusValue,
+            fillColor: '#4F46E5',
+            fillOpacity: 0.2,
+            color: '#4F46E5',
+            weight: 2
+        }).addTo(map);
+    }
+
+    function openLocationModal() {
+        const modal = document.getElementById('locationModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        
+        // รอให้ modal แสดงก่อนแล้วค่อยเริ่ม map
+        setTimeout(() => {
+            initMap();
+        }, 200);
+    }
+
+    function editLocation(locationId) {
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        fetch(`/attendance/api/locations/${locationId}/`, {
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            document.getElementById('locationId').value = data.id;
+            document.getElementById('locationName').value = data.name;
+            document.getElementById('locationLat').value = data.latitude;
+            document.getElementById('locationLng').value = data.longitude;
+            document.getElementById('locationRadius').value = data.radius;
+            document.getElementById('modalTitle').textContent = 'แก้ไขพื้นที่เช็คอิน';
+            
+            openLocationModal();
+            
+            setTimeout(() => {
+                const latlng = L.latLng(data.latitude, data.longitude);
+                map.setView(latlng, 16);
+                updateMarkerPosition(latlng);
+            }, 200);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('เกิดข้อผิดพลาดในการโหลดข้อมูลพื้นที่');
+        });
+    }
+    // Auto submit form เมื่อเลือกวันที่
+    document.querySelector('input[name="date"]').addEventListener('change', function() {
+        document.getElementById('dateFilterForm').submit();
+    });
+    
+    // ฟังก์ชันสำหรับ export ข้อมูล
+    function exportToExcel() {
+        const selectedDate = document.querySelector('input[name="date"]').value;
+        // แก้ไข URL path ให้ตรงกับ URL pattern
+        const exportUrl = `/attendance/export-attendance/?date=${selectedDate}`;
+        window.location.href = exportUrl;
+    }
+
+    function toggleExportMenu() {
+        const menu = document.getElementById('exportMenu');
+        menu.classList.toggle('hidden');
+    }
+
+    // ปิดเมนูเมื่อคลิกที่อื่น
+    document.addEventListener('click', function(event) {
+        const menu = document.getElementById('exportMenu');
+        const exportButton = event.target.closest('button');
+        if (!exportButton && !menu.classList.contains('hidden')) {
+            menu.classList.add('hidden');
+        }
+    });
+
+    function exportToExcel(period) {
+        const selectedDate = document.querySelector('input[name="date"]').value;
+        const exportUrl = `/attendance/export-attendance/?date=${selectedDate}&period=${period}`;
+        window.location.href = exportUrl;
+    }
+
+
+    function openLocationModal() {
+        document.getElementById('locationModal').classList.remove('hidden');
+        document.getElementById('locationModal').classList.add('flex');
+    }
+
+    function closeLocationModal() {
+        document.getElementById('locationModal').classList.add('hidden');
+        document.getElementById('locationModal').classList.remove('flex');
+    }
+
+    function editLocation(locationId) {
+        // ดึงข้อมูลพื้นที่จาก API
+        fetch(`/attendance/api/locations/${locationId}/`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('locationId').value = data.id;
+                document.getElementById('locationName').value = data.name;
+                document.getElementById('locationLat').value = data.latitude;
+                document.getElementById('locationLng').value = data.longitude;
+                document.getElementById('locationRadius').value = data.radius;
+                document.getElementById('modalTitle').textContent = 'แก้ไขพื้นที่เช็คอิน';
+                openLocationModal();
+            });
+    }
+
+    // แก้ไขฟังก์ชัน deleteLocation
+    function deleteLocation(locationId) {
+        if (confirm('คุณต้องการลบพื้นที่นี้ใช่หรือไม่?')) {
+            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            fetch(`/attendance/api/locations/${locationId}/`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                    'Content-Type': 'application/json'
+                }
+            }).then(response => {
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    alert('เกิดข้อผิดพลาดในการลบพื้นที่');
+                }
+            }).catch(error => {
+                console.error('Error:', error);
+                alert('เกิดข้อผิดพลาดในการลบพื้นที่');
+            });
+        }
+    }
+
+    // ปิด modal เมื่อคลิกพื้นที่ด้านนอก
+    document.getElementById('locationModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeLocationModal();
+        }
+    });
+</script>
+{% endblock %}

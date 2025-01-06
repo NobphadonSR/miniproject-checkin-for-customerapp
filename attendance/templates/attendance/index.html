@@ -1,0 +1,182 @@
+{% extends 'attendance/base.html' %}
+
+{% block content %}
+<div class="min-h-[80vh] flex items-center py-4 md:py-8">
+    <div class="container mx-auto px-4">
+        {% if user.is_authenticated %}
+            {% if user.role == 'manager' %}
+            <!-- หน้าแสดงผลสำหรับหัวหน้า -->
+            <div class="text-center mb-12">
+                <div class="inline-block p-3 bg-indigo-100 dark:bg-indigo-900/50 rounded-2xl mb-4">
+                    <i class="ph-users-bold text-5xl text-indigo-600 dark:text-indigo-400"></i>
+                </div>
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white mb-4">
+                    ยินดีต้อนรับ, คุณ{{ user.first_name }}
+                </h1>
+                <p class="text-gray-600 dark:text-gray-400 text-lg mb-8">
+                    ระบบจัดการพนักงานและการลงเวลา
+                </p>
+                <div class="flex flex-col md:flex-row justify-center gap-4">
+                    <a href="{% url 'attendance:manager_dashboard' %}" class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-8 py-3 rounded-xl hover:from-indigo-600 hover:to-purple-700 transition duration-300 flex items-center justify-center space-x-2 transform hover:scale-[1.02]">
+                        <i class="ph-chart-line-up-bold"></i>
+                        <span>แดชบอร์ดผู้จัดการ</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Features Grid สำหรับหัวหน้า -->
+            <div class="grid grid-cols-3 gap-8 md:gap-12 max-w-5xl mx-auto">
+                <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
+                    <div class="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl flex items-center justify-center mb-4">
+                        <i class="ph-users-three-bold text-2xl text-indigo-600 dark:text-indigo-400"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-2">จัดการพนักงาน</h3>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        ดูข้อมูลพนักงาน ตรวจสอบการลงเวลา และจัดการคำขอลา
+                    </p>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
+                    <div class="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl flex items-center justify-center mb-4">
+                        <i class="ph-chart-bar-bold text-2xl text-indigo-600 dark:text-indigo-400"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-2">รายงานสรุป</h3>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        ดูรายงานสรุปการทำงาน สถิติ และข้อมูลเชิงลึก
+                    </p>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
+                    <div class="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl flex items-center justify-center mb-4">
+                        <i class="ph-file-csv-bold text-2xl text-indigo-600 dark:text-indigo-400"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-2">ส่งออกข้อมูล</h3>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        ส่งออกรายงานในรูปแบบ CSV สำหรับการวิเคราะห์เพิ่มเติม
+                    </p>
+                </div>
+            </div>
+
+            {% else %}
+            <!-- หน้าแสดงผลสำหรับพนักงาน -->
+            <div class="text-center mb-12">
+                <div class="inline-block p-3 bg-indigo-100 dark:bg-indigo-900/50 rounded-2xl mb-4">
+                    <i class="ph-user-circle-bold text-5xl text-indigo-600 dark:text-indigo-400"></i>
+                </div>
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white mb-4">
+                    ยินดีต้อนรับ, คุณ{{ user.first_name }}
+                </h1>
+                <p class="text-gray-600 dark:text-gray-400 text-lg mb-8">
+                    ระบบลงเวลาทำงานและจัดการวันลา
+                </p>
+                <div class="flex flex-col md:flex-row justify-center gap-4">
+                    <a href="{% url 'attendance:dashboard' %}" class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-8 py-3 rounded-xl hover:from-indigo-600 hover:to-purple-700 transition duration-300 flex items-center justify-center space-x-2 transform hover:scale-[1.02]">
+                        <i class="ph-clock-bold"></i>
+                        <span>ลงเวลาทำงาน</span>
+                    </a>
+                    <a href="{% url 'attendance:leave_request' %}" class="bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-8 py-3 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition duration-300 flex items-center justify-center space-x-2">
+                        <i class="ph-calendar-plus-bold"></i>
+                        <span>ขอลางาน</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Features Grid สำหรับพนักงาน -->
+            <div class="grid grid-cols-3 gap-8 md:gap-12 max-w-5xl mx-auto">
+                <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
+                    <div class="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl flex items-center justify-center mb-4">
+                        <i class="ph-clock-bold text-2xl text-indigo-600 dark:text-indigo-400"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-2">ลงเวลาทำงาน</h3>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        บันทึกเวลาเข้า-ออกงานได้ง่ายๆ ด้วยระบบอัตโนมัติ
+                    </p>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
+                    <div class="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl flex items-center justify-center mb-4">
+                        <i class="ph-calendar-check-bold text-2xl text-indigo-600 dark:text-indigo-400"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-2">จัดการวันลา</h3>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        ส่งคำขอลา และติดตามสถานะได้ทันที
+                    </p>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
+                    <div class="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl flex items-center justify-center mb-4">
+                        <i class="ph ph-clock-counter-clockwise-bold text-2xl text-indigo-600 dark:text-indigo-400"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-2">ประวัติการทำงาน</h3>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        ดูประวัติการลงเวลาและการลาของคุณ
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+
+        {% else %}
+        <!-- Hero Section -->
+        <div class="text-center mb-12">
+            <div class="inline-block p-3 bg-indigo-100 dark:bg-indigo-900/50 rounded-2xl mb-4">
+                <i class="ph-fingerprint-bold text-5xl text-indigo-600 dark:text-indigo-400"></i>
+            </div>
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white mb-4">
+                ระบบบันทึกเวลาทำงานอัจฉริยะ
+            </h1>
+            <p class="text-gray-600 dark:text-gray-400 text-lg mb-8">
+                บริหารจัดการเวลาทำงานของคุณอย่างมีประสิทธิภาพ
+            </p>
+            <div class="flex flex-col md:flex-row justify-center gap-4">
+                <a href="{% url 'attendance:login' %}" class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-8 py-3 rounded-xl hover:from-indigo-600 hover:to-purple-700 transition duration-300 flex items-center justify-center space-x-2 transform hover:scale-[1.02]">
+                    <i class="ph-sign-in-bold"></i>
+                    <span>เข้าสู่ระบบ</span>
+                </a>
+                <a href="{% url 'attendance:register' %}" class="bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-8 py-3 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition duration-300 flex items-center justify-center space-x-2">
+                    <i class="ph-user-plus-bold"></i>
+                    <span>ลงทะเบียน</span>
+                </a>
+            </div>
+        </div>
+        {% endif %}
+        <!-- Hero Section -->
+
+        <!-- Features Grid -->
+        <div class="grid grid-cols-3 gap-8 md:gap-12 max-w-5xl mx-auto">
+            <!-- Feature 1 -->
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
+                <div class="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl flex items-center justify-center mb-4">
+                    <i class="ph-clock-bold text-2xl text-indigo-600 dark:text-indigo-400"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-2">บันทึกเวลาแบบเรียลไทม์</h3>
+                <p class="text-gray-600 dark:text-gray-400">
+                    บันทึกเวลาเข้า-ออกงานได้ทันที พร้อมระบบแจ้งเตือนอัตโนมัติ
+                </p>
+            </div>
+
+            <!-- Feature 2 -->
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
+                <div class="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl flex items-center justify-center mb-4">
+                    <i class="ph-calendar-plus-bold text-2xl text-indigo-600 dark:text-indigo-400"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-2">จัดการวันลาออนไลน์</h3>
+                <p class="text-gray-600 dark:text-gray-400">
+                    ส่งคำขอลา ตรวจสอบสถานะ และจัดการวันลาได้ง่ายๆ
+                </p>
+            </div>
+
+            <!-- Feature 3 -->
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
+                <div class="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl flex items-center justify-center mb-4">
+                    <i class="ph-chart-line-up-bold text-2xl text-indigo-600 dark:text-indigo-400"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-2">รายงานและสถิติ</h3>
+                <p class="text-gray-600 dark:text-gray-400">
+                    ดูสถิติการทำงาน รายงานประจำเดือน และวิเคราะห์ข้อมูล
+                </p>
+            </div>
+        </div>
+        <!-- Features Grid -->
+    </div>
+</div>
+{% endblock %}

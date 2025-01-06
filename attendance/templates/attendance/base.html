@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบเช็คอินพนักงาน</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/phosphor-icons"></script>
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+        }
+        .gradient-bg {
+            background: linear-gradient(to right, #4f46e5, #7c3aed);
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen">
+    <nav class="gradient-bg text-white sticky top-0 z-50 backdrop-blur-lg bg-opacity-80">
+        <div class="container mx-auto">
+            <div class="flex justify-between items-center p-4">
+                <a href="{% url 'attendance:dashboard' %}" class="text-lg md:text-xl font-bold flex items-center space-x-2">
+                    <i class="ph-fingerprint-bold text-xl md:text-2xl"></i>
+                    <span>ระบบเช็คอินพนักงาน</span>
+                </a>
+
+                <div class="flex items-center space-x-4">
+                    <!-- Dark Mode Toggle -->
+                    <button onclick="toggleDarkMode()" class="p-2 rounded-full hover:bg-white/10 transition duration-200">
+                        <i id="moon-icon" class="ph-moon-bold text-xl"></i>
+                        <i id="sun-icon" class="ph-sun-bold text-xl" style="display: none;"></i>
+                    </button>
+
+                    {% if user.is_authenticated %}
+                        <!-- Desktop Menu -->
+                        <div class="hidden md:flex items-center space-x-6">
+                            <div class="flex items-center space-x-2">
+                                <i class="ph-user-circle-bold text-xl"></i>
+                                <span class="text-sm">{{ user.first_name }} {{ user.last_name }}</span>
+                            </div>
+                            <form method="post" action="{% url 'attendance:logout' %}" class="inline">
+                                {% csrf_token %}
+                                <button type="submit" class="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full hover:bg-white/30 transition duration-300 flex items-center space-x-2 text-sm">
+                                    <i class="ph-sign-out-bold"></i>
+                                    <span>ออกจากระบบ</span>
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Mobile Menu Button -->
+                        <button class="md:hidden bg-white/20 p-2 rounded-lg" onclick="toggleMobileMenu()">
+                            <i class="ph-list-bold text-xl"></i>
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Mobile Menu -->
+            {% if user.is_authenticated %}
+            <div id="mobileMenu" class="md:hidden hidden">
+                <div class="p-4 space-y-3 bg-white/10 rounded-xl backdrop-blur-sm mx-4 mb-4">
+                    <div class="flex items-center space-x-2 text-sm">
+                        <i class="ph-user-circle-bold"></i>
+                        <span>{{ user.first_name }} {{ user.last_name }}</span>
+                    </div>
+                    <form method="post" action="{% url 'attendance:logout' %}" class="w-full">
+                        {% csrf_token %}
+                        <button type="submit" class="w-full bg-white/20 px-4 py-2 rounded-lg hover:bg-white/30 transition duration-300 flex items-center justify-center space-x-2 text-sm">
+                            <i class="ph-sign-out-bold"></i>
+                            <span>ออกจากระบบ</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+        <div class="container mx-auto mt-4 px-4 space-y-2">
+            {% for message in messages %}
+                <div class="p-4 rounded-xl backdrop-blur-sm animate-fade-in
+                    {% if message.tags == 'success' %}
+                        bg-green-500/10 text-green-500 dark:text-green-400
+                    {% else %}
+                        bg-red-500/10 text-red-500 dark:text-red-400
+                    {% endif %}">
+                    <div class="flex items-center space-x-2">
+                        <i class="{% if message.tags == 'success' %}ph-check-circle-bold{% else %}ph-warning-bold{% endif %}"></i>
+                        <span>{{ message }}</span>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <main class="pb-20">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer class="fixed bottom-0 w-full bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-4 px-4 md:py-6">
+        <div class="container mx-auto flex flex-col md:flex-row justify-between items-center">
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-2 md:mb-0">© 2024 CheckMate SAKOL and © Copyright 2023 www.sakolgroup.com all rights reserved</p>
+            
+            <!-- เพิ่มส่วนนี้ -->
+            <div class="flex items-center space-x-4">
+                <a href="{% url 'attendance:privacy_policy' %}" class="text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 text-sm">
+                    นโยบายความเป็นส่วนตัว
+                </a>
+                <a href="{% url 'attendance:cookie_policy' %}" class="text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 text-sm">
+                    นโยบายคุกกี้
+                </a>
+                <a href="#" class="text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 text-sm">
+                    ช่วยเหลือ
+                </a>
+            </div>
+        </div>
+    </footer>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        prompt: ['Prompt', 'sans-serif'],
+                    },
+                }
+            }
+        }
+
+        // Dark Mode Management
+        document.addEventListener('DOMContentLoaded', () => {
+            const darkMode = localStorage.getItem('darkMode') === 'true';
+            document.documentElement.classList.toggle('dark', darkMode);
+            updateThemeIcon(darkMode);
+        });
+
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('darkMode', isDark);
+            updateThemeIcon(isDark);
+        }
+
+        function updateThemeIcon(isDark) {
+            const moonIcon = document.getElementById('moon-icon');
+            const sunIcon = document.getElementById('sun-icon');
+            if (isDark) {
+                moonIcon.style.display = 'none';
+                sunIcon.style.display = 'block';
+            } else {
+                moonIcon.style.display = 'block';
+                sunIcon.style.display = 'none';
+            }
+        }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            menu.classList.toggle('hidden');
+            menu.classList.toggle('animate-fade-in');
+        }
+    </script>
+    {% block extra_js %}{% endblock %}
+    <script>
+        // ฟังก์ชันสำหรับจัดการ cookie
+        function setCookie(name, value, days) {
+            let expires = "";
+            if (days) {
+                const date = new Date();
+                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                expires = "; expires=" + date.toUTCString();
+            }
+            document.cookie = name + "=" + (value || "") + expires + "; path=/; SameSite=Lax";
+        }
+
+        function getCookie(name) {
+            const nameEQ = name + "=";
+            const ca = document.cookie.split(';');
+            for(let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+            }
+            return null;
+        }
+
+        // จัดการ session cookie
+        document.addEventListener('DOMContentLoaded', function() {
+            // ตั้งค่า session cookie
+            if (!getCookie('session_started')) {
+                setCookie('session_started', new Date().toISOString(), 1);
+            }
+
+            // ตั้งค่า last_activity cookie
+            setCookie('last_activity', new Date().toISOString(), 1);
+        });
+
+        // อัพเดท last_activity ทุกครั้งที่มีการโต้ตอบ
+        document.addEventListener('click', function() {
+            setCookie('last_activity', new Date().toISOString(), 1);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+{% extends 'attendance/base.html' %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-2xl mx-auto">
+        <!-- Leave Balance Card -->
+        <div class="bg-gradient-to-r from-purple-500 to-pink-600 rounded-2xl p-6 mb-8 shadow-lg">
+            <div class="flex items-center justify-between text-white">
+                <div>
+                    <p class="text-white/80 text-sm">วันลาคงเหลือ</p>
+                    <h3 class="text-3xl font-bold">10 วัน</h3>
+                </div>
+                <i class="ph-calendar-bold text-4xl text-white/80"></i>
+            </div>
+        </div>
+
+        <!-- Leave Request Form -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 backdrop-blur-sm">
+            <h2 class="text-2xl font-bold mb-6 flex items-center space-x-2 text-gray-800 dark:text-white">
+                <i class="ph-calendar-plus-bold text-indigo-600 dark:text-indigo-400"></i>
+                <span>ขอลางาน</span>
+            </h2>
+
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+                
+                <div>
+                    <label class="block text-gray-700 dark:text-gray-300 mb-2 font-medium">วันที่ต้องการลา</label>
+                    <div class="relative">
+                        {{ form.date }}
+                        <i class="ph-calendar absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-gray-700 dark:text-gray-300 mb-2 font-medium">ประเภทการลา</label>
+                    <select class="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition duration-200">
+                        <option>ลาป่วย</option>
+                        <option>ลากิจ</option>
+                        <option>ลาพักร้อน</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-gray-700 dark:text-gray-300 mb-2 font-medium">เหตุผลการลา</label>
+                    {{ form.note }}
+                </div>
+
+                <div class="flex items-center space-x-4">
+                    <button type="submit" class="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 px-6 rounded-xl hover:from-indigo-600 hover:to-purple-700 transition duration-300 flex items-center justify-center space-x-2 transform hover:scale-[1.02]">
+                        <i class="ph-paper-plane-right-bold"></i>
+                        <span>ส่งคำขอลา</span>
+                    </button>
+                    <a href="{% url 'attendance:dashboard' %}" class="px-6 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition duration-300">
+                        ยกเลิก
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

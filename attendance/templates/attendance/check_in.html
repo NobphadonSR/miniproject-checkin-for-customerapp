@@ -1,0 +1,225 @@
+{% extends 'attendance/base.html' %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-md mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+        <h1 class="text-2xl font-bold mb-6 text-gray-800 dark:text-white">เช็คอินเข้างาน</h1>
+
+        <!-- แสดงพิกัดปัจจุบัน -->
+        <div class="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <h2 class="text-sm font-semibold mb-2 text-gray-600 dark:text-gray-300">ตำแหน่งปัจจุบันของคุณ:</h2>
+            <div id="currentLocation" class="text-sm text-gray-500 dark:text-gray-400">
+                กำลังค้นหาตำแหน่ง...
+            </div>
+        </div>
+
+        <!-- แสดงระยะห่างจากจุดที่กำหนด -->
+        <div class="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <h2 class="text-sm font-semibold mb-2 text-gray-600 dark:text-gray-300">ระยะห่างจากจุดเช็คอิน:</h2>
+            <div id="distanceInfo" class="text-sm text-gray-500 dark:text-gray-400">
+                กำลังคำนวณระยะห่าง...
+            </div>
+        </div>
+        
+        <form method="post" id="checkInForm">
+            {% csrf_token %}
+            <input type="hidden" name="latitude" id="latitude">
+            <input type="hidden" name="longitude" id="longitude">
+            
+            <button type="submit" 
+                    id="checkInButton"
+                    disabled
+                    class="w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed">
+                เช้างาน
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+let watchId = null;
+
+// แก้ไขฟังก์ชัน updateLocation
+function updateLocation(position) {
+    const latitude = position.coords.latitude;
+    const longitude = position.coords.longitude;
+    
+    // อัพเดทค่าใน form
+    document.getElementById('latitude').value = latitude;
+    document.getElementById('longitude').value = longitude;
+    
+    // แสดงพิกัดปัจจุบัน
+    document.getElementById('currentLocation').innerHTML = `
+        ละติจูด: ${latitude.toFixed(6)}<br>
+        ลองจิจูด: ${longitude.toFixed(6)}
+    `;
+    
+    // ตรวจสอบระยะห่างกับทุกพื้นที่ที่กำหนด
+    fetch('/attendance/api/locations/')
+        .then(response => response.json())
+        .then(locations => {
+            let minDistance = Infinity;
+            let nearestLocation = null;
+
+            locations.forEach(location => {
+                const distance = calculateDistance(
+                    latitude, 
+                    longitude, 
+                    location.latitude, 
+                    location.longitude
+                );
+                
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestLocation = location;
+                }
+            });
+
+            const distanceElement = document.getElementById('distanceInfo');
+            const checkInButton = document.getElementById('checkInButton');
+            
+            if (nearestLocation) {
+                if (minDistance <= nearestLocation.radius) {
+                    distanceElement.innerHTML = `
+                        <span class="text-green-500">คุณอยู่ในระยะที่สามารถเช็คอินได้</span><br>
+                        สถานที่: ${nearestLocation.name}<br>
+                        ระยะห่าง: ${minDistance.toFixed(0)} เมตร
+                    `;
+                    checkInButton.disabled = false;
+                } else {
+                    distanceElement.innerHTML = `
+                        <span class="text-red-500">คุณอยู่นอกระยะที่กำหนด</span><br>
+                        สถานที่ที่ใกล้ที่สุด: ${nearestLocation.name}<br>
+                        ระยะห่าง: ${minDistance.toFixed(0)} เมตร<br>
+                        (ต้องอยู่ในระยะ ${nearestLocation.radius} เมตร)
+                    `;
+                    checkInButton.disabled = true;
+                }
+            } else {
+                distanceElement.innerHTML = 'ไม่พบพื้นที่สำหรับเช็คอิน';
+                checkInButton.disabled = true;
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching locations:', error);
+            distanceElement.innerHTML = 'เกิดข้อผิดพลาดในการตรวจสอบพื้นที่';
+            checkInButton.disabled = true;
+        });
+}
+
+// เพิ่มฟังก์ชันสำหรับแสดงแผนที่ (ตัวเลือก)
+function showMap(currentLat, currentLng, locations) {
+    const mapContainer = document.createElement('div');
+    mapContainer.id = 'map';
+    mapContainer.style.height = '300px';
+    mapContainer.style.marginBottom = '1rem';
+    
+    document.querySelector('.max-w-md').insertBefore(
+        mapContainer,
+        document.getElementById('currentLocation').parentElement
+    );
+
+    const map = L.map('map').setView([currentLat, currentLng], 15);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // แสดงตำแหน่งปัจจุบัน
+    L.marker([currentLat, currentLng])
+        .addTo(map)
+        .bindPopup('ตำแหน่งของคุณ');
+
+    // แสดงพื้นที่เช็คอินทั้งหมด
+    locations.forEach(location => {
+        L.circle([location.latitude, location.longitude], {
+            radius: location.radius,
+            color: '#4F46E5',
+            fillColor: '#4F46E5',
+            fillOpacity: 0.2
+        }).addTo(map);
+        
+        L.marker([location.latitude, location.longitude])
+            .addTo(map)
+            .bindPopup(location.name);
+    });
+}
+
+// เพิ่มฟังก์ชันตรวจสอบ location cookie
+function checkLastLocation() {
+    const lastLocation = getCookie('last_location');
+    if (lastLocation) {
+        try {
+            const locationData = JSON.parse(lastLocation);
+            const now = new Date();
+            const lastTimestamp = new Date(locationData.timestamp);
+            
+            // ตรวจสอบว่าตำแหน่งล่าสุดไม่เกิน 5 นาที
+            const fiveMinutes = 5 * 60 * 1000;
+            if (now - lastTimestamp < fiveMinutes) {
+                // อัพเดทข้อมูลตำแหน่งจาก cookie
+                updateLocation({
+                    coords: {
+                        latitude: locationData.lat,
+                        longitude: locationData.lng
+                    }
+                });
+            }
+        } catch (e) {
+            console.error('Error parsing last location:', e);
+        }
+    }
+}
+
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371000; // รัศมีของโลกในเมตร
+    const φ1 = lat1 * Math.PI/180;
+    const φ2 = lat2 * Math.PI/180;
+    const Δφ = (lat2-lat1) * Math.PI/180;
+    const Δλ = (lon2-lon1) * Math.PI/180;
+
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+    return R * c; // ระยะทางในเมตร
+}
+
+function startLocationWatch() {
+    if (navigator.geolocation) {
+        // ตรวจสอบตำแหน่งล่าสุดจาก cookie ก่อน
+        checkLastLocation();
+        
+        // ขอตำแหน่งต่อเนื่อง
+        watchId = navigator.geolocation.watchPosition(
+            updateLocation,
+            function(error) {
+                document.getElementById('currentLocation').innerHTML = 
+                    'ไม่สามารถระบุตำแหน่งได้ กรุณาอนุญาตการเข้าถึงตำแหน่งที่ตั้ง';
+                document.getElementById('checkInButton').disabled = true;
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 5000,
+                maximumAge: 0
+            }
+        );
+    } else {
+        document.getElementById('currentLocation').innerHTML = 
+            'เบราว์เซอร์ของคุณไม่รองรับการระบุตำแหน่ง';
+        document.getElementById('checkInButton').disabled = true;
+    }
+}
+
+// เริ่มติดตามตำแหน่งเมื่อโหลดหน้า
+document.addEventListener('DOMContentLoaded', startLocationWatch);
+
+// หยุดติดตามตำแหน่งเมื่อออกจากหน้า
+window.addEventListener('beforeunload', function() {
+    if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+    }
+});
+</script>
+{% endblock %}

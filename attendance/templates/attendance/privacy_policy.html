@@ -1,0 +1,193 @@
+{% extends 'attendance/base.html' %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <div class="inline-block p-2 bg-indigo-100 dark:bg-indigo-900/50 rounded-2xl mb-4">
+                <i class="ph-shield-check-bold text-4xl text-indigo-600 dark:text-indigo-400"></i>
+            </div>
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white mb-4">นโยบายความเป็นส่วนตัว</h1>
+            <p class="text-gray-600 dark:text-gray-400">อัปเดตล่าสุด: 1 มีนาคม 2024</p>
+        </div>
+
+        <!-- Main Content -->
+        <div class="space-y-8">
+            <!-- Introduction -->
+            <section class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8 backdrop-blur-sm">
+                <h2 class="text-xl font-bold mb-4 text-gray-800 dark:text-white flex items-center space-x-2">
+                    <i class="ph-info-bold text-indigo-600 dark:text-indigo-400"></i>
+                    <span>บทนำ</span>
+                </h2>
+                <p class="text-gray-600 dark:text-gray-400 leading-relaxed">
+                    CheckMate ("เรา", "พวกเรา", หรือ "ของเรา") ให้ความสำคัญกับความเป็นส่วนตัวของคุณ นโยบายความเป็นส่วนตัวนี้อธิบายวิธีที่เราเก็บรวบรวม ใช้ และเปิดเผยข้อมูลของคุณเมื่อคุณใช้แพลตฟอร์มของเรา
+                </p>
+            </section>
+
+            <!-- Data Collection -->
+            <section class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8 backdrop-blur-sm">
+                <h2 class="text-xl font-bold mb-4 text-gray-800 dark:text-white flex items-center space-x-2">
+                    <i class="ph-database-bold text-indigo-600 dark:text-indigo-400"></i>
+                    <span>ข้อมูลที่เราเก็บรวบรวม</span>
+                </h2>
+                <div class="space-y-4">
+                    <div class="flex items-start space-x-4">
+                        <div class="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center flex-shrink-0 mt-1">
+                            <i class="ph-user-bold text-indigo-600 dark:text-indigo-400"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-medium text-gray-800 dark:text-white mb-2">ข้อมูลส่วนบุคคล</h3>
+                            <p class="text-gray-600 dark:text-gray-400">
+                                - ชื่อและนามสกุล<br>
+                                - อีเมล<br>
+                                - เบอร์โทรศัพท์<br>
+                                - ที่อยู่
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-start space-x-4">
+                        <div class="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center flex-shrink-0 mt-1">
+                            <i class="ph-clock-bold text-indigo-600 dark:text-indigo-400"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-medium text-gray-800 dark:text-white mb-2">ข้อมูลการใช้งาน</h3>
+                            <p class="text-gray-600 dark:text-gray-400">
+                                - เวลาเข้า-ออกงาน<br>
+                                - ประวัติการลา<br>
+                                - ข้อมูลการใช้งานระบบ
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Cookie Policy -->
+            <section class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8 backdrop-blur-sm">
+                <h2 class="text-xl font-bold mb-4 text-gray-800 dark:text-white flex items-center space-x-2">
+                    <i class="ph-cookie-bold text-indigo-600 dark:text-indigo-400"></i>
+                    <span>นโยบายคุกกี้</span>
+                </h2>
+                <div class="space-y-4">
+                    <p class="text-gray-600 dark:text-gray-400">
+                        เราใช้คุกกี้เพื่อปรับปรุงประสบการณ์การใช้งานของคุณ คุกกี้ที่เราใช้แบ่งเป็นประเภทต่างๆ ดังนี้:
+                    </p>
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                            <h3 class="font-medium text-gray-800 dark:text-white mb-2">คุกกี้ที่จำเป็น</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">
+                                - session_started: ใช้ติดตามการเริ่มต้น session<br>
+                                - last_activity: ใช้ติดตามกิจกรรมล่าสุดของผู้ใช้<br>
+                                - last_location: ใช้เก็บพิกัดล่าสุดสำหรับการเช็คอิน<br>
+                                - darkMode: ใช้จดจำการตั้งค่าธีม<br>
+                                - cookie-consent: ใช้จดจำการยอมรับนโยบายคุกกี้
+                            </p>
+                        </div>
+                        <div class="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                            <h3 class="font-medium text-gray-800 dark:text-white mb-2">คุกกี้เพื่อการวิเคราะห์</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">
+                                ช่วยให้เราเข้าใจวิธีการใช้งานเว็บไซต์ของผู้ใช้เพื่อปรับปรุงประสบการณ์การใช้งาน
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Your Rights -->
+            <section class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8 backdrop-blur-sm">
+                <h2 class="text-xl font-bold mb-4 text-gray-800 dark:text-white flex items-center space-x-2">
+                    <i class="ph-scales-bold text-indigo-600 dark:text-indigo-400"></i>
+                    <span>สิทธิของคุณ</span>
+                </h2>
+                <div class="space-y-3">
+                    <div class="flex items-center space-x-3">
+                        <i class="ph-check-circle-bold text-green-500"></i>
+                        <p class="text-gray-600 dark:text-gray-400">สิทธิในการเข้าถึงข้อมูลส่วนบุคคลของคุณ</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <i class="ph-check-circle-bold text-green-500"></i>
+                        <p class="text-gray-600 dark:text-gray-400">สิทธิในการแก้ไขข้อมูลที่ไม่ถูกต้อง</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <i class="ph-check-circle-bold text-green-500"></i>
+                        <p class="text-gray-600 dark:text-gray-400">สิทธิในการลบข้อมูลของคุณ</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <i class="ph-check-circle-bold text-green-500"></i>
+                        <p class="text-gray-600 dark:text-gray-400">สิทธิในการคัดค้านการประมวลผลข้อมูล</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Contact -->
+            <section class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8 backdrop-blur-sm">
+                <h2 class="text-xl font-bold mb-4 text-gray-800 dark:text-white flex items-center space-x-2">
+                    <i class="ph-envelope-bold text-indigo-600 dark:text-indigo-400"></i>
+                    <span>ติดต่อเรา</span>
+                </h2>
+                <p class="text-gray-600 dark:text-gray-400 mb-4">
+                    หากคุณมีคำถามเกี่ยวกับนโยบายความเป็นส่วนตัวของเรา สามารถติดต่อเราได้ที่:
+                </p>
+                <div class="space-y-2">
+                    <div class="flex items-center space-x-3">
+                        <i class="ph-envelope text-indigo-600 dark:text-indigo-400"></i>
+                        <a href="mailto:privacy@checkmate.com" class="text-indigo-600 dark:text-indigo-400 hover:underline">
+                            privacy@checkmate.com
+                        </a>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <i class="ph-phone text-indigo-600 dark:text-indigo-400"></i>
+                        <span class="text-gray-600 dark:text-gray-400">02-123-4567</span>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Cookie Consent Banner -->
+        <div id="cookie-consent" class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4 md:p-6 transform transition-transform duration-300 translate-y-full">
+            <div class="container mx-auto max-w-4xl flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0 md:space-x-4">
+                <div class="flex-1">
+                    <p class="text-gray-600 dark:text-gray-400 text-sm">
+                        เราใช้คุกกี้เพื่อปรับปรุงประสบการณ์การใช้งานของคุณ คุณสามารถเลือกการตั้งค่าคุกกี้ได้
+                    </p>
+                </div>
+                <div class="flex space-x-3">
+                    <button onclick="acceptCookies()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 transition duration-150">
+                        ยอมรับทั้งหมด
+                    </button>
+                    <button onclick="rejectCookies()" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm hover:bg-gray-300 dark:hover:bg-gray-600 transition duration-150">
+                        ปฏิเสธที่ไม่จำเป็น
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showCookieConsent() {
+    const banner = document.getElementById('cookie-consent');
+    banner.classList.remove('translate-y-full');
+}
+
+function acceptCookies() {
+    localStorage.setItem('cookie-consent', 'accepted');
+    hideCookieConsent();
+}
+
+function rejectCookies() {
+    localStorage.setItem('cookie-consent', 'rejected');
+    hideCookieConsent();
+}
+
+function hideCookieConsent() {
+    const banner = document.getElementById('cookie-consent');
+    banner.classList.add('translate-y-full');
+}
+
+// Show banner if consent not given
+if (!localStorage.getItem('cookie-consent')) {
+    setTimeout(showCookieConsent, 1000);
+}
+</script>
+{% endblock %}
