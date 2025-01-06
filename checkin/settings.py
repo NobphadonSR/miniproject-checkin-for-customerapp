@@ -103,8 +103,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'attendance',
 ]
-if DEBUG:
-    INSTALLED_APPS += ['sslserver']
 
 AUTH_USER_MODEL = 'attendance.User'
 
