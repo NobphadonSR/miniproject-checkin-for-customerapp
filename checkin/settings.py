@@ -15,11 +15,13 @@ from pathlib import Path
 from dotenv import load_dotenv
 import dj_database_url
 
-if 'RENDER' in os.environ:
+# Database
+if 'DATABASE_URL' in os.environ:
     DATABASES = {
         'default': dj_database_url.config(
             default=os.environ.get('DATABASE_URL'),
-            conn_max_age=600
+            conn_max_age=600,
+            conn_health_checks=True,
         )
     }
 else:
@@ -61,10 +63,18 @@ if DEBUG:
     SECURE_HSTS_PRELOAD = False
 '''
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['miniproject-checkin-app.onrender.com','localhost','127.0.0.1']
+
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
+# CSRF Settings
+CSRF_TRUSTED_ORIGINS = [
+    'https://miniproject-checkin-app.onrender.com',
+    'http://miniproject-checkin-app.onrender.com'
+]
+
 
 # Application definition
 INSTALLED_APPS = [
@@ -150,10 +160,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
+# Static files
+STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_DIRS = [BASE_DIR / 'static']
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+
 
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
@@ -165,9 +176,16 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
 
+# Media files
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+# Whitenoise settings
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# สร้างโฟลเดอร์ static ถ้ายังไม่มี
+if not os.path.exists(os.path.join(BASE_DIR, 'static')):
+    os.makedirs(os.path.join(BASE_DIR, 'static'))
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
