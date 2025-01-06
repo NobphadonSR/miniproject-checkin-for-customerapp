@@ -22,6 +22,7 @@ if 'DATABASE_URL' in os.environ:
             default=os.environ.get('DATABASE_URL'),
             conn_max_age=600,
             conn_health_checks=True,
+            ssl_require=True,
         )
     }
 else:
@@ -49,7 +50,24 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', os.getenv('SECRET_KEY'))
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = 'RENDER' not in os.environ
+DEBUG = True
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+        },
+    },
+}
+
 # เพิ่มการตั้งค่าความปลอดภัย
 
 '''
@@ -63,7 +81,7 @@ if DEBUG:
     SECURE_HSTS_PRELOAD = False
 '''
 
-ALLOWED_HOSTS = ['miniproject-checkin-app.onrender.com','localhost','127.0.0.1']
+ALLOWED_HOSTS = ['checkin-app-yq4r.onrender.com','localhost','127.0.0.1']
 
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
 if RENDER_EXTERNAL_HOSTNAME:
@@ -71,10 +89,9 @@ if RENDER_EXTERNAL_HOSTNAME:
 
 # CSRF Settings
 CSRF_TRUSTED_ORIGINS = [
-    'https://miniproject-checkin-app.onrender.com',
-    'http://miniproject-checkin-app.onrender.com'
+    'https://checkin-app-yq4r.onrender.com',
+    'http://checkin-app-yq4r.onrender.com'
 ]
-
 
 # Application definition
 INSTALLED_APPS = [

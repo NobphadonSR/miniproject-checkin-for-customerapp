@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import login
+from django.contrib.auth import login, authenticate
 from django.utils import timezone
 from datetime import datetime, time, timedelta
 from .models import User, Attendance, LocationSettings
@@ -11,6 +11,7 @@ from math import radians, sin, cos, sqrt, atan2
 from decimal import Decimal
 import csv
 from django.http import HttpResponse, JsonResponse
+from django.views.decorators.csrf import csrf_protect
 
 def index(request):
     return render(request, 'attendance/index.html')
@@ -27,6 +28,25 @@ def register(request):
     else:
         form = EmployeeRegistrationForm()
     return render(request, 'attendance/register.html', {'form': form})
+
+@csrf_protect
+def login_view(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        
+        try:
+            user = authenticate(request, username=username, password=password)
+            if user is not None:
+                login(request, user)
+                return redirect('index')
+            else:
+                messages.error(request, 'Invalid username or password')
+        except Exception as e:
+            print(f"Login error: {str(e)}")  # เพิ่ม logging
+            messages.error(request, 'An error occurred during login')
+    
+    return render(request, 'attendance/login.html')
 
 @login_required
 def dashboard(request):
