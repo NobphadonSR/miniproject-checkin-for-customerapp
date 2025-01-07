@@ -29,17 +29,7 @@ class User(AbstractUser):
     department = models.CharField('แผนก', max_length=20, choices=DEPARTMENT_CHOICES)
     phone = models.CharField('เบอร์โทรศัพท์', max_length=10)
     address = models.TextField('ที่อยู่')
-
-    def clean(self):
-        if not self.phone or len(self.phone) != 10:
-            raise ValidationError({'phone': 'เบอร์โทรศัพท์ต้องมี 10 หลัก'})
-        
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        super().save(*args, **kwargs)
-
     class Meta:
-        db_table = 'attendance_user'  # กำหนดชื่อตารางให้ชัดเจน
         verbose_name = 'ผู้ใช้งาน'
         verbose_name_plural = 'ผู้ใช้งาน'
 

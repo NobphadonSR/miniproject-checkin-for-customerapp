@@ -29,25 +29,6 @@ def register(request):
         form = EmployeeRegistrationForm()
     return render(request, 'attendance/register.html', {'form': form})
 
-@csrf_protect
-def login_view(request):
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        
-        try:
-            user = authenticate(request, username=username, password=password)
-            if user is not None:
-                login(request, user)
-                return redirect('index')
-            else:
-                messages.error(request, 'Invalid username or password')
-        except Exception as e:
-            print(f"Login error: {str(e)}")  # เพิ่ม logging
-            messages.error(request, 'An error occurred during login')
-    
-    return render(request, 'attendance/login.html')
-
 @login_required
 def dashboard(request):
     if request.user.role == 'manager':
