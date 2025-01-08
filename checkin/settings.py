@@ -33,6 +33,8 @@ DEBUG = True
 # ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
 ALLOWED_HOSTS = ['*']
 
+CSRF_TRUSTED_ORIGINS = ['https://*.ngrok-free.app']
+
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',

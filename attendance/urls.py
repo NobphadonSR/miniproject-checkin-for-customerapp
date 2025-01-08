@@ -17,6 +17,8 @@ urlpatterns = [
     path('privacy-policy/', views.privacy_policy, name='privacy_policy'),
     path('cookie-policy/', views.cookie_policy, name='cookie_policy'),
     path('add-location/', views.add_location, name='add_location'),
+    path('api/locations/', views.get_locations, name='get_locations'),
     path('api/locations/<int:location_id>/', views.get_location, name='get_location'),
+    path('api/locations/add/', views.add_location, name='add_location'),
     path('api/locations/<int:location_id>/delete/', views.delete_location, name='delete_location'),
 ]

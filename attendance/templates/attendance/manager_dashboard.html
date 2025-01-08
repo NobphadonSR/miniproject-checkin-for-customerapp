@@ -1,8 +1,10 @@
 {% extends 'attendance/base.html' %}
 
 {% block extra_css %}
-<!-- เพิ่ม Leaflet CSS -->
+<!-- เพิ่ม Leaflet CSS และ Plugins -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
 <style>
     #map {
         width: 100%;
@@ -16,13 +18,24 @@
     .leaflet-control-geocoder {
         clear: none !important;
     }
-    /* เพิ่ม style สำหรับ modal */
     .modal-map-container {
         position: relative;
         height: 400px;
         width: 100%;
         border-radius: 0.5rem;
         overflow: hidden;
+    }
+    #locationModal {
+        z-index: 9999;
+    }
+    .location-button {
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        transition: all 0.3s;
+    }
+    .location-button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 </style>
 {% endblock %}
@@ -404,55 +417,33 @@
 <!-- แก้ไข Modal -->
 <div id="locationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
     <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-4xl w-full mx-4">
-        <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-white">
-            <span id="modalTitle">เพิ่มพื้นที่เช็คอิน</span>
-        </h3>
+        <h3 class="text-lg font-bold mb-4">จัดการพื้นที่เช็คอิน</h3>
         <form id="locationForm" method="post" action="{% url 'attendance:add_location' %}">
             {% csrf_token %}
             <input type="hidden" name="location_id" id="locationId">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- ฟอร์มข้อมูล -->
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            ชื่อสถานที่
-                        </label>
-                        <input type="text" name="name" id="locationName"
-                               class="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                        <label>ชื่อสถานที่</label>
+                        <input type="text" name="name" id="locationName" required
+                               class="w-full p-2 border rounded-lg">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            ละติจูด
-                        </label>
-                        <input type="number" step="any" name="latitude" id="locationLat"
-                               class="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                        <label>รัศมี (เมตร)</label>
+                        <input type="number" name="radius" id="locationRadius" required
+                               class="w-full p-2 border rounded-lg"
+                               onchange="updateMarkerAndCircle(marker.getLatLng(), this.value)">
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            ลองจิจูด
-                        </label>
-                        <input type="number" step="any" name="longitude" id="locationLng"
-                               class="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            รัศมี (เมตร)
-                        </label>
-                        <input type="number" name="radius" id="locationRadius"
-                               class="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-                               onchange="updateCircle(this.value)">
-                    </div>
+                    <input type="hidden" name="latitude" id="locationLat" required>
+                    <input type="hidden" name="longitude" id="locationLng" required>
                 </div>
-                
-                <!-- แผนที่ -->
-                <div class="modal-map-container">
-                    <div id="map"></div>
+                <div class="h-96">
+                    <div id="map" class="h-full rounded-lg"></div>
                 </div>
             </div>
-            
             <div class="flex justify-end space-x-3 mt-6">
                 <button type="button" onclick="closeLocationModal()"
-                        class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">
                     ยกเลิก
                 </button>
                 <button type="submit"
@@ -467,10 +458,35 @@
 {% block extra_js %}
 <!-- เพิ่ม Leaflet JS และ plugin -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.js"></script>
 <script>
-    let map;
-    let marker;
-    let circle;
+let map;
+let marker;
+let circle;
+
+function openLocationModal() {
+        // รีเซ็ตฟอร์ม
+    document.getElementById('locationForm').reset();
+    document.getElementById('locationId').value = '';
+    document.getElementById('modalTitle').textContent = 'เพิ่มพื้นที่เช็คอิน';
+
+        // แสดง modal
+    const modal = document.getElementById('locationModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+        // รอให้ modal แสดงเสร็จแล้วค่อยเริ่มต้น map
+        setTimeout(() => {
+            initMap();
+        }, 100);
+    }
+
+    function closeLocationModal() {
+        const modal = document.getElementById('locationModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
 
     function initMap() {
         if (map) {
@@ -489,8 +505,8 @@
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
 
-        // เพิ่มช่องค้นหาสถานที่
-        const geocoder = L.Control.geocoder({
+        // เพิ่มปุ่มค้นหาสถานที่
+        const searchControl = L.Control.geocoder({
             defaultMarkGeocode: false,
             position: 'topleft',
             placeholder: 'ค้นหาสถานที่...',
@@ -503,6 +519,14 @@
         })
         .addTo(map);
 
+        // เพิ่มปุ่มระบุตำแหน่งปัจจุบัน
+        L.control.locate({
+            position: 'topleft',
+            strings: {
+                title: 'ระบุตำแหน่งปัจจุบัน'
+            }
+        }).addTo(map);
+
         // ให้แผนที่ปรับขนาดหลังจากโหลดเสร็จ
         setTimeout(() => {
             map.invalidateSize();
@@ -512,30 +536,58 @@
         map.on('click', function(e) {
             updateMarkerPosition(e.latlng);
         });
+
+        // โหลดพื้นที่เช็คอินที่มีอยู่
+        loadExistingLocations();
     }
 
-    function updateMarkerPosition(latlng) {
+    // เพิ่มฟังก์ชันโหลดพื้นที่เช็คอินที่มีอยู่
+    function loadExistingLocations() {
+        const locations = {{ locations|safe }};
+        locations.forEach(location => {
+            const latlng = L.latLng(location.latitude, location.longitude);
+            const circle = L.circle(latlng, {
+                radius: location.radius,
+                fillColor: '#4F46E5',
+                fillOpacity: 0.2,
+                color: '#4F46E5',
+                weight: 2
+            }).addTo(map);
+
+            // เพิ่ม popup แสดงข้อมูล
+            circle.bindPopup(`
+                <strong>${location.name}</strong><br>
+                รัศมี: ${location.radius} เมตร
+            `);
+        });
+    }
+
+    function updateMarkerAndCircle(latlng, radius) {
         if (marker) {
             map.removeLayer(marker);
         }
+        if (circle) {
+            map.removeLayer(circle);
+        }
 
-        marker = L.marker(latlng, {
-            draggable: true
+        marker = L.marker(latlng, { draggable: true }).addTo(map);
+        circle = L.circle(latlng, {
+            radius: radius,
+            fillColor: '#4F46E5',
+            fillOpacity: 0.2,
+            color: '#4F46E5',
+            weight: 2
         }).addTo(map);
 
-        // อัพเดทค่าในฟอร์มเมื่อลากหมุด
+        // อัพเดทค่าในฟอร์ม
+        document.getElementById('locationLat').value = latlng.lat.toFixed(6);
+        document.getElementById('locationLng').value = latlng.lng.toFixed(6);
+
+        // เพิ่ม event listener สำหรับการลากหมุด
         marker.on('dragend', function() {
             const pos = marker.getLatLng();
-            document.getElementById('locationLat').value = pos.lat;
-            document.getElementById('locationLng').value = pos.lng;
-            updateCircle(document.getElementById('locationRadius').value);
+            updateMarkerAndCircle(pos, radius);
         });
-
-        // อัพเดทค่าในฟอร์ม
-        document.getElementById('locationLat').value = latlng.lat;
-        document.getElementById('locationLng').value = latlng.lng;
-        
-        updateCircle(document.getElementById('locationRadius').value);
     }
 
     function updateCircle(radius) {
@@ -545,10 +597,8 @@
             map.removeLayer(circle);
         }
 
-        const radiusValue = Math.max(0, Number(radius)); // ป้องกันค่าติดลบ
-        
         circle = L.circle(marker.getLatLng(), {
-            radius: radiusValue,
+            radius: parseFloat(radius),
             fillColor: '#4F46E5',
             fillOpacity: 0.2,
             color: '#4F46E5',

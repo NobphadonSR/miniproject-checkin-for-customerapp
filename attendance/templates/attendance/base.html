@@ -34,7 +34,7 @@
     <nav class="gradient-bg text-white sticky top-0 z-50 backdrop-blur-lg bg-opacity-80">
         <div class="container mx-auto">
             <div class="flex justify-between items-center p-4">
-                <a href="{% url 'attendance:dashboard' %}" class="text-lg md:text-xl font-bold flex items-center space-x-2">
+                <a href="/" class="text-lg md:text-xl font-bold flex items-center space-x-2">
                     <i class="ph-fingerprint-bold text-xl md:text-2xl"></i>
                     <span>ระบบเช็คอินพนักงาน</span>
                 </a>
@@ -51,7 +51,7 @@
                         <div class="hidden md:flex items-center space-x-6">
                             <div class="flex items-center space-x-2">
                                 <i class="ph-user-circle-bold text-xl"></i>
-                                <span class="text-sm">{{ user.first_name }} {{ user.last_name }}</span>
+                                <span class="text-sm">{{ user.first_name }} {{ user.last_name }} แผนก {{ user.department }}</span>
                             </div>
                             <form method="post" action="{% url 'attendance:logout' %}" class="inline">
                                 {% csrf_token %}
@@ -76,7 +76,7 @@
                 <div class="p-4 space-y-3 bg-white/10 rounded-xl backdrop-blur-sm mx-4 mb-4">
                     <div class="flex items-center space-x-2 text-sm">
                         <i class="ph-user-circle-bold"></i>
-                        <span>{{ user.first_name }} {{ user.last_name }}</span>
+                        <span>{{ user.first_name }} {{ user.last_name }} แผนก {{ user.department }}</span>
                     </div>
                     <form method="post" action="{% url 'attendance:logout' %}" class="w-full">
                         {% csrf_token %}

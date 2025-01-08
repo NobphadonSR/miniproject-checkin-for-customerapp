@@ -121,6 +121,12 @@ def manager_dashboard(request):
         'attendances': attendances,
         'employees': employees,
     }
+
+    locations = LocationSettings.objects.all()
+    
+    context.update({
+        'locations': locations,
+    })
     
     return render(request, 'attendance/manager_dashboard.html', context)
 
@@ -143,13 +149,18 @@ def check_in(request):
     if request.method == 'POST':
         latitude = request.POST.get('latitude')
         longitude = request.POST.get('longitude')
+        location_id = request.POST.get('location_id')
         
         if not latitude or not longitude:
             messages.error(request, 'กรุณาอนุญาตการเข้าถึงตำแหน่งที่ตั้ง')
             return redirect('dashboard')
             
         # ตรวจสอบว่าอยู่ในพื้นที่ที่กำหนดหรือไม่
-        location_settings = LocationSettings.objects.first()
+        if location_id:
+            location_settings = LocationSettings.objects.get(id=location_id)
+        else:
+            location_settings = LocationSettings.objects.first()
+        
         if location_settings:
             distance = calculate_distance(
                 latitude, 
@@ -187,7 +198,7 @@ def check_in(request):
             longitude=Decimal(longitude)
         )
         messages.success(request, 'เช็คอินสำเร็จ')
-        return redirect('dashboard')
+        return redirect('attendance:dashboard')
     
     return render(request, 'attendance/check_in.html')
 
@@ -239,7 +250,7 @@ def cookie_policy(request):
     """
     Redirect ไปยังส่วนคุกกี้ในหน้านโยบายความเป็นส่วนตัว
     """
-    return redirect('privacy_policy')
+    return redirect('attendance:privacy_policy')
 
 @login_required
 def export_attendance(request):
@@ -336,24 +347,44 @@ def export_attendance(request):
 
 @login_required
 def add_location(request):
-    if request.method == 'POST':
+    if request.method == 'POST' and request.user.role == 'manager':
         location_id = request.POST.get('location_id')
-        if location_id:
-            location = LocationSettings.objects.get(id=location_id)
-        else:
-            location = LocationSettings()
-        
-        location.name = request.POST.get('name')
-        location.latitude = request.POST.get('latitude')
-        location.longitude = request.POST.get('longitude')
-        location.radius = request.POST.get('radius')
-        location.save()
-        
-        return redirect('attendance:manager_dashboard')
+        try:
+            if location_id:
+                location = LocationSettings.objects.get(id=location_id)
+            else:
+                location = LocationSettings()
+            
+            location.name = request.POST.get('name')
+            location.latitude = request.POST.get('latitude')
+            location.longitude = request.POST.get('longitude')
+            location.radius = request.POST.get('radius')
+            location.save()
+            
+            messages.success(request, 'บันทึกพื้นที่เช็คอินสำเร็จ')
+        except Exception as e:
+            messages.error(request, f'เกิดข้อผิดพลาด: {str(e)}')
+    
+    return redirect('attendance:manager_dashboard')
 
 @login_required
 def get_location(request, location_id):
-    locations = LocationSettings.objects.get(id=location_id)
+    try:
+        location = LocationSettings.objects.get(id=location_id)
+        return JsonResponse({
+            'id': location.id,
+            'name': location.name,
+            'latitude': float(location.latitude),
+            'longitude': float(location.longitude),
+            'radius': location.radius
+        })
+    except LocationSettings.DoesNotExist:
+        return JsonResponse({'error': 'Location not found'}, status=404)
+    
+# เพิ่มฟังก์ชันใหม่สำหรับดึงข้อมูล locations ทั้งหมด
+@login_required
+def get_locations(request):
+    locations = LocationSettings.objects.all()
     return JsonResponse([{
         'id': location.id,
         'name': location.name,
