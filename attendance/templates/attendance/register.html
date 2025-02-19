@@ -2,8 +2,18 @@
 
 {% block extra_css %}
 <style>
-    select {
-        @apply w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent dark:bg-gray-700 dark:text-white;
+    /* เมื่อ hover บน input */
+    input:hover,
+    select:hover,
+    textarea:hover {
+        @apply dark:bg-gray-600 transition-colors duration-200;
+    }
+
+    /* เมื่อ focus บน input */
+    input:focus,
+    select:focus,
+    textarea:focus {
+        @apply dark:bg-gray-600 outline-none;
     }
 </style>
 {% endblock %}
@@ -42,7 +52,7 @@
                     <!-- ชื่อผู้ใช้ -->
                     <div>
                         <label class="block text-gray-700 dark:text-gray-300 mb-2 font-medium">ชื่อผู้ใช้ *</label>
-                        <div class="relative"> 
+                        <div class="relative dark:bg-gray-700"> 
                             {{ form.username }}
                         </div>
                     </div>

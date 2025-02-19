@@ -1,0 +1,17 @@
+{% if status == 'present' %}
+    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400">
+        <i class="ph-check-circle-bold mr-1"></i>ปกติ
+    </span>
+{% elif status == 'late' %}
+    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-400">
+        <i class="ph-clock-countdown-bold mr-1"></i>มาสาย
+    </span>
+{% elif status == 'absent' %}
+    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400">
+        <i class="ph-x-circle-bold mr-1"></i>ขาดงาน
+    </span>
+{% elif status == 'leave' %}
+    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400">
+        <i class="ph-calendar-blank-bold mr-1"></i>ลางาน
+    </span>
+{% endif %} 

@@ -57,6 +57,9 @@ class EmployeeRegistrationForm(UserCreationForm):
         self.fields['department'].widget.attrs.update({
             'class': 'w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-indigo-500'
         })
+        # กำหนด class สำหรับทุก field
+        for field_name, field in self.fields.items():
+            field.widget.attrs['class'] = 'w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent bg-transparent dark:bg-gray-700 text-gray-900 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400'
 
 class LeaveRequestForm(forms.ModelForm):
     date = forms.DateField(label='วันที่ต้องการลา', widget=forms.DateInput(attrs={'type': 'date'}))

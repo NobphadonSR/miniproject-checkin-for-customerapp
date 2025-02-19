@@ -9,6 +9,27 @@
         width: 100%;
         border-radius: 0.5rem;
     }
+    #camera-container {
+        width: 100%;
+        max-width: 400px;
+        margin: 0 auto;
+        position: relative;
+    }
+    #camera {
+        width: 100%;
+        border-radius: 0.5rem;
+    }
+    #photo {
+        display: none;
+        width: 100%;
+        border-radius: 0.5rem;
+    }
+    .camera-controls {
+        margin-top: 1rem;
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+    }
 </style>
 {% endblock %}
 
@@ -33,10 +54,34 @@
             </div>
         </div>
         
-        <form method="post" id="checkInForm">
+        <!-- เพิ่มส่วนกล้องก่อน form เช็คอิน -->
+        <div class="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <h2 class="text-sm font-semibold mb-2 text-gray-600 dark:text-gray-300">ถ่ายรูปยืนยันตัวตน:</h2>
+            <div id="camera-container">
+                <video id="camera" autoplay playsinline></video>
+                <canvas id="photo" class="hidden"></canvas>
+            </div>
+            <div class="camera-controls">
+                <button type="button" id="startCamera" 
+                        class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition duration-150">
+                    เปิดกล้อง
+                </button>
+                <button type="button" id="takePhoto" 
+                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-150" disabled>
+                    ถ่ายภาพ
+                </button>
+                <button type="button" id="retakePhoto" 
+                        class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition duration-150" disabled>
+                    ถ่ายใหม่
+                </button>
+            </div>
+        </div>
+
+        <form method="post" id="checkInForm" enctype="multipart/form-data">
             {% csrf_token %}
             <input type="hidden" name="latitude" id="latitude">
             <input type="hidden" name="longitude" id="longitude">
+            <input type="hidden" name="photo" id="photoData">
             
             <button type="submit" 
                     id="checkInButton"
@@ -50,6 +95,8 @@
 
 <script>
 let watchId = null;
+let stream = null;
+let photoTaken = false;
 
 // แก้ไขฟังก์ชัน updateLocation
 function updateLocation(position) {
@@ -231,6 +278,77 @@ document.addEventListener('DOMContentLoaded', startLocationWatch);
 window.addEventListener('beforeunload', function() {
     if (watchId !== null) {
         navigator.geolocation.clearWatch(watchId);
+    }
+});
+
+// เริ่มการทำงานของกล้อง
+document.getElementById('startCamera').addEventListener('click', async () => {
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: 'user' }, 
+            audio: false 
+        });
+        const video = document.getElementById('camera');
+        video.srcObject = stream;
+        document.getElementById('takePhoto').disabled = false;
+    } catch (err) {
+        alert('ไม่สามารถเข้าถึงกล้องได้: ' + err.message);
+    }
+});
+
+// ถ่ายภาพ
+document.getElementById('takePhoto').addEventListener('click', () => {
+    const video = document.getElementById('camera');
+    const canvas = document.getElementById('photo');
+    const context = canvas.getContext('2d');
+
+    // ตั้งขนาด canvas ให้เท่ากับวิดีโอ
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    // วาดภาพจากวิดีโอลงใน canvas
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // แปลงรูปเป็น base64
+    const photoData = canvas.toDataURL('image/jpeg');
+    document.getElementById('photoData').value = photoData;
+    
+    // แสดงรูปที่ถ่าย
+    video.style.display = 'none';
+    canvas.style.display = 'block';
+    
+    // อัพเดทปุ่มควบคุม
+    document.getElementById('takePhoto').disabled = true;
+    document.getElementById('retakePhoto').disabled = false;
+    photoTaken = true;
+});
+
+// ถ่ายรูปใหม่
+document.getElementById('retakePhoto').addEventListener('click', () => {
+    const video = document.getElementById('camera');
+    const canvas = document.getElementById('photo');
+    
+    video.style.display = 'block';
+    canvas.style.display = 'none';
+    
+    document.getElementById('takePhoto').disabled = false;
+    document.getElementById('retakePhoto').disabled = true;
+    document.getElementById('photoData').value = '';
+    photoTaken = false;
+});
+
+// ตรวจสอบก่อน submit
+document.getElementById('checkInForm').addEventListener('submit', (e) => {
+    if (!photoTaken) {
+        e.preventDefault();
+        alert('กรุณาถ่ายรูปก่อนเช็คอิน');
+    }
+});
+
+// หยุดการทำงานของกล้องเมื่อออกจากหน้า
+window.addEventListener('beforeunload', () => {
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
     }
 });
 </script>

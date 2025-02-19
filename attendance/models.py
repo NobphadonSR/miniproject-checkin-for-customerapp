@@ -49,6 +49,7 @@ class Attendance(models.Model):
     longitude = models.DecimalField('ลองจิจูด', max_digits=9, decimal_places=6, null=True, blank=True)
     status = models.CharField('สถานะ', max_length=10, choices=STATUS_CHOICES)
     note = models.TextField('หมายเหตุ', blank=True)
+    check_in_photo = models.ImageField('รูปถ่ายเช็คอิน', upload_to='check_in_photos/%Y/%m/%d/', null=True, blank=True)
 
     class Meta:
         verbose_name = 'การลงเวลา'
@@ -59,7 +60,48 @@ class LocationSettings(models.Model):
     latitude = models.DecimalField('ละติจูด', max_digits=20, decimal_places=15)
     longitude = models.DecimalField('ลองจิจูด', max_digits=20, decimal_places=15)
     radius = models.IntegerField('รัศมี (เมตร)', default=100)
+    is_active = models.BooleanField(default=False)  # เพิ่มฟิลด์นี้
 
     class Meta:
         verbose_name = 'ตั้งค่าพิกัดสถานที่'
         verbose_name_plural = 'ตั้งค่าพิกัดสถานที่'
+
+    def save(self, *args, **kwargs):
+        # ถ้าตั้งค่าเป็น active ให้ยกเลิก active ของพื้นที่อื่น
+        if self.is_active:
+            LocationSettings.objects.exclude(id=self.id).update(is_active=False)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+class LeaveRequest(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'รอการอนุมัติ'),
+        ('approved', 'อนุมัติ'),
+        ('rejected', 'ปฏิเสธ'),
+    )
+    
+    LEAVE_TYPE_CHOICES = (
+        ('sick', 'ป่วย'),
+        ('personal', 'กิจส่วนตัว'),
+        ('vacation', 'พักร้อน'),
+        ('other', 'อื่นๆ'),
+    )
+    
+    employee = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='พนักงาน')
+    date = models.DateField('วันที่ลา')
+    leave_type = models.CharField('ประเภทการลา', max_length=20, choices=LEAVE_TYPE_CHOICES)
+    note = models.TextField('เหตุผลการลา', blank=True)
+    status = models.CharField('สถานะ', max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField('วันที่สร้าง', auto_now_add=True)
+    approved_by = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='approved_leaves',
+        verbose_name='ผู้อนุมัติ'
+    )
+    approved_at = models.DateTimeField('วันที่อนุมัติ', null=True, blank=True)
+

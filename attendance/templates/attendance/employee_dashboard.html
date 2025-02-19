@@ -1,5 +1,13 @@
 {% extends 'attendance/base.html' %}
 
+{% block extra_css %}
+<style>
+    span .text-sm {
+        text-decoration: none;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container mx-auto px-4 py-4 md:py-8">
     <!-- Stats Overview -->
@@ -41,20 +49,23 @@
                 <span>รายงานการลงเวลา</span>
             </h2>
             <div class="space-y-3 md:space-y-4">
-                <form method="post" action="{% url 'attendance:check_in' %}">
-                    {% csrf_token %}
-                    <a href="{% url 'attendance:check_in' %}" class="w-full bg-gradient-to-r from-green-400 to-emerald-600 text-white p-3 md:p-4 rounded-xl hover:from-green-500 hover:to-emerald-700 transition duration-300 flex items-center justify-center space-x-2 md:space-x-3 transform hover:scale-[1.02]">
-                        <i class="ph-sign-in-bold text-lg md:text-xl"></i>
-                        <span class="text-base md:text-lg">เข้างาน</span>
-                    </a>
-                </form>
-                <form method="post" action="{% url 'attendance:check_out' %}">
-                    {% csrf_token %}
-                    <button type="submit" class="w-full bg-gradient-to-r from-red-400 to-rose-600 text-white p-3 md:p-4 rounded-xl hover:from-red-500 hover:to-rose-700 transition duration-300 flex items-center justify-center space-x-2 md:space-x-3 transform hover:scale-[1.02]">
-                        <i class="ph-sign-out-bold text-lg md:text-xl"></i>
-                        <span class="text-base md:text-lg">ออกงาน</span>
-                    </button>
-                </form>
+                <!-- เพิ่มการตรวจสอบสถานะการเช็คอิน -->
+                {% if not today_attendance or not today_attendance.check_in %}
+                <a href="{% url 'attendance:check_in' %}" class="w-full bg-gradient-to-r from-green-400 to-emerald-600 text-white p-3 md:p-4 rounded-xl hover:from-green-500 hover:to-emerald-700 transition duration-300 flex items-center justify-center space-x-2 md:space-x-3 transform hover:scale-[1.02]">
+                    <i class="ph-sign-in-bold text-lg md:text-xl"></i>
+                    <span class="text-base md:text-lg">เข้างาน</span>
+                </a>
+                {% endif %}
+    
+                <!-- เพิ่มการตรวจสอบสถานะการเช็คเอาท์ -->
+                {% if today_attendance and today_attendance.check_in and not today_attendance.check_out %}
+                <button type="submit" class="w-full bg-gradient-to-r from-red-400 to-rose-600 text-white p-3 md:p-4 rounded-xl hover:from-red-500 hover:to-rose-700 transition duration-300 flex items-center justify-center space-x-2 md:space-x-3 transform hover:scale-[1.02]">
+                    <i class="ph-sign-out-bold text-lg md:text-xl"></i>
+                    <span class="text-base md:text-lg">ออกงาน</span>
+                </button>
+                {% endif %}
+    
+                <!-- ปุ่มขอลาแสดงเสมอ -->
                 <a href="{% url 'attendance:leave_request' %}" class="block text-center bg-gradient-to-r from-amber-400 to-orange-600 text-white p-3 md:p-4 rounded-xl hover:from-amber-500 hover:to-orange-700 transition duration-300 flex items-center justify-center space-x-2 md:space-x-3 transform hover:scale-[1.02]">
                     <i class="ph-calendar-plus-bold text-lg md:text-xl"></i>
                     <span class="text-base md:text-lg">ขอลา</span>
@@ -63,102 +74,144 @@
         </div>
 
         <!-- Attendance History -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 md:p-6 card-hover backdrop-blur-sm overflow-hidden">
-            <div class="flex justify-between items-center mb-4 md:mb-6">
-                <h2 class="text-lg md:text-xl font-bold flex items-center space-x-2 text-gray-800 dark:text-white">
-                    <i class="ph-clock-countdown-bold text-xl md:text-2xl text-indigo-600 dark:text-indigo-400"></i>
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 md:p-6 card-hover backdrop-blur-sm">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold flex items-center space-x-2 text-gray-800 dark:text-white">
+                    <i class="ph-clock-countdown-bold text-xl text-indigo-600 dark:text-indigo-400"></i>
                     <span>ประวัติการลงเวลา</span>
                 </h2>
-                <!-- Mobile Filter Button -->
-                <button class="md:hidden bg-gray-100 dark:bg-gray-700 p-2 rounded-lg">
-                    <i class="ph-funnel-bold"></i>
-                </button>
             </div>
 
-            <!-- Mobile View: List Format -->
-            <div class="md:hidden space-y-3">
+            <!-- Responsive Attendance Records -->
+            <div class="space-y-3">
                 {% for attendance in attendances %}
                 <div class="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-xl">
-                    <div class="flex justify-between items-start mb-2">
-                        <div class="text-sm text-gray-600 dark:text-gray-400">{{ attendance.date }}</div>
-                        <span class="px-2 py-1 rounded-full text-xs font-medium
-                            {% if attendance.status == 'present' %}bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400
-                            {% elif attendance.status == 'late' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-400
-                            {% elif attendance.status == 'absent' %}bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400
-                            {% else %}bg-gray-100 text-gray-800 dark:bg-gray-900/50 dark:text-gray-400{% endif %}">
-                            {{ attendance.get_status_display }}
-                        </span>
-                    </div>
-                    <div class="flex justify-between text-sm">
-                        <div class="flex items-center space-x-1">
-                            <i class="ph-arrow-right text-green-500"></i>
-                            <span>{{ attendance.check_in|default:"-" }}</span>
+                    <!-- Desktop Layout -->
+                    <div class="hidden md:flex md:items-center md:justify-between">
+                        <div class="text-sm text-gray-600 dark:text-gray-400 w-32">
+                            {{ attendance.date|date:"d F Y" }}
                         </div>
-                        <div class="flex items-center space-x-1">
-                            <i class="ph-arrow-left text-red-500"></i>
-                            <span>{{ attendance.check_out|default:"-" }}</span>
+
+                        <div class="flex items-center space-x-4 w-40">
+                            <div class="flex items-center space-x-1">
+                                <i class="ph-arrow-right text-green-500"></i>
+                                <span>{{ attendance.check_in|time:"H:i"|default:"-" }}</span>
+                            </div>
+                            <div class="flex items-center space-x-1">
+                                <i class="ph-arrow-left text-red-500"></i>
+                                <span>{{ attendance.check_out|time:"H:i"|default:"-" }}</span>
+                            </div>
+                        </div>
+
+                        <div class="w-28">
+                            {% include "attendance/includes/status_badge.html" with status=attendance.status %}
+                        </div>
+
+                        <div class="flex items-center space-x-4">
+                            {% if attendance.latitude and attendance.longitude %}
+                            <a href="https://www.google.com/maps?q={{ attendance.latitude }},{{ attendance.longitude }}" 
+                               target="_blank"
+                               class="text-indigo-600 dark:text-indigo-400 hover:underline flex items-center space-x-1">
+                                <i class="ph-map-pin-bold"></i>
+                                <span class="text-sm">ตำแหน่ง</span>
+                            </a>
+                            {% endif %}
+
+                            {% if attendance.check_in_photo %}
+                            <button onclick="openImageModal('{{ attendance.check_in_photo.url }}')"
+                                    class="text-indigo-600 dark:text-indigo-400 hover:underline flex items-center space-x-1">
+                                <i class="ph-camera-bold"></i>
+                                <span class="text-sm">รูป</span>
+                            </button>
+                            {% endif %}
                         </div>
                     </div>
 
-                    {% if attendance.latitude and attendance.longitude %}
-                    <div class="mt-2 text-xs text-gray-500 dark:text-gray-400 flex items-center space-x-1">
-                        <i class="ph-map-pin-bold"></i>
-                        <a href="https://www.google.com/maps?q={{ attendance.latitude }},{{ attendance.longitude }}" 
-                        target="_blank"
-                        class="text-indigo-600 dark:text-indigo-400 hover:underline">
-                            ดูตำแหน่งที่เช็คอิน
-                        </a>
+                    <!-- Mobile Layout -->
+                    <div class="md:hidden">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="text-sm text-gray-600 dark:text-gray-400">{{ attendance.date|date:"d F Y" }}</div>
+                            {% include "attendance/includes/status_badge.html" with status=attendance.status %}
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <div class="flex items-center space-x-1">
+                                <i class="ph-arrow-right text-green-500"></i>
+                                <span>{{ attendance.check_in|time:"H:i"|default:"-" }}</span>
+                            </div>
+                            <div class="flex items-center space-x-1">
+                                <i class="ph-arrow-left text-red-500"></i>
+                                <span>{{ attendance.check_out|time:"H:i"|default:"-" }}</span>
+                            </div>
+                        </div>
+
+                        <div class="mt-2 flex items-center justify-start space-x-4 text-xs">
+                            {% if attendance.latitude and attendance.longitude %}
+                            <a href="https://www.google.com/maps?q={{ attendance.latitude }},{{ attendance.longitude }}" 
+                               target="_blank"
+                               class="text-indigo-600 dark:text-indigo-400 hover:underline flex items-center space-x-1">
+                                <i class="ph-map-pin-bold"></i>
+                                <span>ดูตำแหน่ง</span>
+                            </a>
+                            {% endif %}
+
+                            {% if attendance.check_in_photo %}
+                            <button onclick="openImageModal('{{ attendance.check_in_photo.url }}')"
+                                    class="text-indigo-600 dark:text-indigo-400 hover:underline flex items-center space-x-1">
+                                <i class="ph-camera-bold"></i>
+                                <span>ดูรูป</span>
+                            </button>
+                            {% endif %}
+                        </div>
                     </div>
-                    {% endif %}
                 </div>
                 {% endfor %}
             </div>
+        </div>
 
-            <!-- Desktop View: Table Format -->
-            <div class="hidden md:block overflow-x-auto">
-                <table class="min-w-full">
-                    <thead class="bg-gray-50 dark:bg-gray-700/50">
-                        <tr class="text-gray-600 dark:text-gray-300">
-                            <th class="py-3 px-4 text-left">วันที่</th>
-                            <th class="py-3 px-4 text-left">เข้างาน</th>
-                            <th class="py-3 px-4 text-left">ออกงาน</th>
-                            <th class="py-3 px-4 text-left">สถานะ</th>
-                            <th class="py-3 px-4 text-left">ตำแหน่ง</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y dark:divide-gray-700">
-                        {% for attendance in attendances %}
-                        <tr class="text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition duration-150">
-                            <td class="py-3 px-4">{{ attendance.date }}</td>
-                            <td class="py-3 px-4">{{ attendance.check_in|default:"-" }}</td>
-                            <td class="py-3 px-4">{{ attendance.check_out|default:"-" }}</td>
-                            <td class="py-3 px-4">
-                                <span class="px-3 py-1 rounded-full text-sm font-medium
-                                    {% if attendance.status == 'present' %}bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400
-                                    {% elif attendance.status == 'late' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-400
-                                    {% elif attendance.status == 'absent' %}bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400
-                                    {% else %}bg-gray-100 text-gray-800 dark:bg-gray-900/50 dark:text-gray-400{% endif %}">
-                                    {{ attendance.get_status_display }}
-                                </span>
-                            </td>
-                            <td class="py-3 px-4">
-                                {% if attendance.latitude and attendance.longitude %}
-                                <a href="https://www.google.com/maps?q={{ attendance.latitude }},{{ attendance.longitude }}" 
-                                   target="_blank"
-                                   class="text-indigo-600 dark:text-indigo-400 hover:underline flex items-center space-x-1">
-                                    <i class="ph-map-pin-bold"></i>
-                                    <span>ดูตำแหน่ง</span>
-                                </a>
-                                {% else %}
-                                -
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
         </div>
     </div>
 </div>
+
+<!-- Image Modal -->
+<div id="imageModal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-50 flex items-center justify-center p-4">
+    <div class="relative bg-white dark:bg-gray-800 rounded-lg max-w-3xl w-full">
+        <div class="p-4 border-b dark:border-gray-700 flex justify-between items-center">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">รูปภาพเช็คอิน</h3>
+            <button onclick="closeImageModal()" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                <i class="ph-x-bold text-xl"></i>
+            </button>
+        </div>
+        <div class="p-4">
+            <img id="modalImage" src="" alt="Check-in photo" class="w-full h-auto rounded-lg">
+        </div>
+    </div>
+</div>
+
+<!-- เพิ่ม JavaScript สำหรับ Modal -->
+{% block extra_js %}
+<script>
+function openImageModal(imageUrl) {
+    const modal = document.getElementById('imageModal');
+    const modalImage = document.getElementById('modalImage');
+    modalImage.src = imageUrl;
+    modal.classList.remove('hidden');
+    // ป้องกันการเลื่อนหน้าเว็บเมื่อ modal เปิด
+    document.body.style.overflow = 'hidden';
+}
+
+function closeImageModal() {
+    const modal = document.getElementById('imageModal');
+    modal.classList.add('hidden');
+    // คืนค่าการเลื่อนหน้าเว็บเมื่อปิด modal
+    document.body.style.overflow = 'auto';
+}
+
+// ปิด modal เมื่อคลิกพื้นหลัง
+document.getElementById('imageModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeImageModal();
+    }
+});
+</script>
+{% endblock %}
 {% endblock %}
